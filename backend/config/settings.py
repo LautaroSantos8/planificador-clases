@@ -1,0 +1,114 @@
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
+
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+# ALLOWED_HOSTS: en producción se lee de la variable de entorno
+# Ej: ALLOWED_HOSTS=miapp.railway.app,192.168.1.10
+_allowed = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Third party
+    'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
+    # Local apps
+    'apps.ai',
+    'apps.docentes',
+    'apps.planificacion',
+    'apps.curricula',
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'config.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'config.wsgi.application'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
+LANGUAGE_CODE = 'es-ar'
+TIME_ZONE = 'America/Argentina/Cordoba'
+USE_I18N = True
+USE_TZ = True
+
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# CORS: en producción se lee de variable de entorno
+# Ej: CORS_ORIGINS=https://miapp.railway.app,http://192.168.1.10
+_cors = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(',') if o.strip()]
+
+# En producción también se puede habilitar CORS por regex si la URL no se conoce de antemano
+CORS_ALLOW_CREDENTIALS = True
+
+AUTH_USER_MODEL = 'docentes.Docente'
+
+DATA_DIR = BASE_DIR / 'data'
+CURRICULA_DIR = DATA_DIR / 'curricula'
+CHROMA_DIR = DATA_DIR / 'chroma'
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
