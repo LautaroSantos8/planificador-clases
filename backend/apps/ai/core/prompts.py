@@ -460,6 +460,45 @@ Sé honesto en tu análisis. Si la actividad no se alinea bien, sugiere alternat
 Responde ahora."""
 
 # =============================================================================
+# TEMPLATE: RESPUESTA CONVERSACIONAL (saludos, preguntas cortas, sin contexto pedagógico)
+# =============================================================================
+
+TEMPLATE_CONVERSACIONAL = """## MENSAJE DEL DOCENTE
+{consulta_docente}
+
+## CONTEXTO
+- Docente: {nombre_docente}
+- Materia: {materia} - {grado}°{division}
+
+## INSTRUCCIONES
+Respondé de forma breve y conversacional. Si es un saludo, saludá y preguntá en qué podés ayudar.
+Ofrecé las opciones disponibles: planificar una clase, generar actividades diferenciadas, consultar contenidos curriculares, adaptar una actividad existente.
+No generes planificaciones ni actividades a menos que el docente lo pida explícitamente.
+
+Respondé ahora."""
+
+# TEMPLATE: RESPUESTA AMBIGUA (tiene intención pero falta especificar qué tipo de ayuda)
+# =============================================================================
+
+TEMPLATE_AMBIGUO = """## MENSAJE DEL DOCENTE
+{consulta_docente}
+
+## CONTEXTO
+- Docente: {nombre_docente}
+- Materia: {materia} - {grado}°{division}
+
+## INSTRUCCIONES
+El docente tiene una necesidad pedagógica pero no especificó qué tipo de ayuda quiere.
+Respondé de forma breve y amigable, hacé UNA sola pregunta para clarificar qué necesita exactamente.
+Ofrecé las opciones concretas según su mensaje:
+- Planificar una clase completa diferenciada
+- Generar actividades puntuales por nivel
+- Consultar qué contenidos corresponden
+- Adaptar una actividad que ya tiene
+No generes planificaciones ni actividades todavía. Solo preguntá qué necesita.
+
+Respondé ahora."""
+
 # TEMPLATE: RESPUESTA GENERAL (para consultas que no encajan en los otros casos)
 # =============================================================================
 
@@ -546,8 +585,49 @@ def detectar_tipo_consulta(texto: str) -> str:
     Returns:
         str: Tipo de consulta (planificacion, actividades, curricula, diferenciar, alinear, general)
     """
-    texto_lower = texto.lower()
+    texto_lower = texto.lower().strip()
+
+    # Detectar mensajes conversacionales cortos (saludos, despedidas, agradecimientos)
+    MENSAJES_CONVERSACIONALES = [
+        "hola", "buenos días", "buenas tardes", "buenas noches", "buenas",
+        "hey", "buen día", "como estas", "cómo estás", "como andás", "cómo andás",
+        "gracias", "muchas gracias", "ok", "okay", "perfecto", "genial",
+        "entendido", "de acuerdo", "dale", "listo", "hasta luego", "chau",
+        "nos vemos", "bye", "adios", "adiós"
+    ]
+    # Si el mensaje es corto (menos de 6 palabras) y contiene un saludo → conversacional
+    palabras = texto_lower.split()
+    es_conversacional = (
+        len(palabras) <= 6 and
+        any(saludo in texto_lower for saludo in MENSAJES_CONVERSACIONALES)
+    )
+    if es_conversacional:
+        return "conversacional"
     
+    # Detectar mensajes ambiguos: tienen intención pedagógica pero no especifican qué tipo
+    # Ejemplos: "necesito algo para fracciones", "tengo alumnos con dificultades"
+    PALABRAS_TEMATICAS = [
+        "fracciones", "suma", "resta", "multiplicación", "división", "geometría",
+        "lectura", "escritura", "ciencias", "historia", "geografía", "matemática",
+        "números", "operaciones", "texto", "comprensión", "ortografía",
+    ]
+    FRASES_VAGAS = [
+        "necesito algo", "necesito ayuda", "quiero algo", "quiero ayuda",
+        "tengo alumnos", "tengo un grupo", "tengo dificultades", "hay dificultades",
+        "me pueden ayudar", "pueden ayudarme", "qué puedo hacer", "que puedo hacer",
+        "cómo trabajo", "como trabajo", "no sé cómo", "no se como",
+        "tengo un problema", "tengo una duda",
+    ]
+    tiene_frase_vaga = any(frase in texto_lower for frase in FRASES_VAGAS)
+    tiene_tema = any(tema in texto_lower for tema in PALABRAS_TEMATICAS)
+    # Si tiene frase vaga O (menciona un tema pero sin acción concreta) → ambiguo
+    sin_accion_concreta = not any(p in texto_lower for p in [
+        "planificación", "planificacion", "actividad", "actividades",
+        "ejercicio", "ejercicios", "adaptar", "alinear", "contenido", "contenidos"
+    ])
+    if tiene_frase_vaga or (tiene_tema and sin_accion_concreta and len(palabras) <= 8):
+        return "ambiguo"
+
     # Verificar si quiere GENERAR planificación (aunque mencione "alineada")
     quiere_generar = any(palabra in texto_lower for palabra in PALABRAS_GENERACION)
     menciona_planificacion = any(palabra in texto_lower for palabra in TIPOS_CONSULTA["planificacion"])
@@ -589,6 +669,8 @@ def obtener_template(tipo_consulta: str) -> str:
         "curricula": TEMPLATE_CONSULTA_CURRICULA,
         "diferenciar": TEMPLATE_DIFERENCIAR,
         "alinear": TEMPLATE_ALINEAR_PROYECTO,
+        "conversacional": TEMPLATE_CONVERSACIONAL,
+        "ambiguo": TEMPLATE_AMBIGUO,
         "general": TEMPLATE_GENERAL
     }
     return templates.get(tipo_consulta, TEMPLATE_GENERAL)

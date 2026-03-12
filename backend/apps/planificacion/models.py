@@ -135,7 +135,10 @@ class PlanificacionGenerada(models.Model):
     # Feedback del docente
     fue_util = models.BooleanField(null=True, blank=True)
     feedback = models.TextField(blank=True)
-    
+
+    # Compresión de historial
+    es_resumen = models.BooleanField(default=False, help_text="True si este mensaje es un resumen comprimido del historial anterior")
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

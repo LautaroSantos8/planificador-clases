@@ -354,11 +354,19 @@ ${alumnos.length > 0
     try {
       const alumnos = await getAlumnos();
 
-      // Construir historial para Gemini (excluyendo el mensaje que acaba de agregar)
-      const historialParaApi = messages
+      // Construir historial para Gemini con ventana deslizante
+      // El backend se encarga de comprimir si supera el umbral,
+      // pero desde el frontend ya mandamos máximo 20 para no enviar payloads enormes.
+      const VENTANA_FRONTEND = 20;
+      const todosLosMensajes = messages
         .filter((m) => m.role === 'user' || m.role === 'assistant')
         .filter((m) => !m.isError && m.content)
-        .map((m) => ({ role: m.role, content: m.content }));
+        .map((m) => ({ role: m.role, content: m.content, es_resumen: m.es_resumen || false }));
+
+      // Separar resumen (siempre va primero si existe) + últimos VENTANA_FRONTEND mensajes normales
+      const resumen = todosLosMensajes.find((m) => m.es_resumen);
+      const normales = todosLosMensajes.filter((m) => !m.es_resumen).slice(-VENTANA_FRONTEND);
+      const historialParaApi = resumen ? [resumen, ...normales] : normales;
 
       const response = await iaAPI.consultar(
         userMessage, grado, division,

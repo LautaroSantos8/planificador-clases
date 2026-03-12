@@ -49,7 +49,7 @@ class PlanificadorDocente:
         # Configurar Gemini
         genai.configure(api_key=settings.GEMINI_API_KEY)
         self.model = genai.GenerativeModel(
-            model_name="gemini-flash-latest",
+            model_name="gemini-2.5-flash",
             generation_config={
                 "temperature": 0.7,
                 "top_p": 0.95,
@@ -108,16 +108,20 @@ class PlanificadorDocente:
             tipo_consulta = detectar_tipo_consulta(consulta)
             logger.info(f"Tipo de consulta detectado: {tipo_consulta}")
             
-            # 2. Buscar contexto en ChromaDB (RAG)
-            contexto_rag, chunks_utilizados = self._buscar_contexto(
-                consulta=consulta,
-                docente_id=docente_id,
-                grado=grado,
-                materia=materia
-            )
-            
-            # 3. Buscar proyecto del docente
-            proyecto_aulico = self._obtener_proyecto_docente(docente_id, grado, materia)
+            # 2. Buscar contexto en ChromaDB (RAG) — omitir para mensajes conversacionales y ambiguos
+            if tipo_consulta in ("conversacional", "ambiguo"):
+                contexto_rag = ""
+                chunks_utilizados = []
+                proyecto_aulico = ""
+            else:
+                contexto_rag, chunks_utilizados = self._buscar_contexto(
+                    consulta=consulta,
+                    docente_id=docente_id,
+                    grado=grado,
+                    materia=materia
+                )
+                # 3. Buscar proyecto del docente
+                proyecto_aulico = self._obtener_proyecto_docente(docente_id, grado, materia)
             
             # 4. Formatear lista de alumnos
             lista_alumnos = formatear_lista_alumnos(alumnos) if alumnos else MSG_SIN_ALUMNOS
@@ -329,40 +333,106 @@ class PlanificadorDocente:
         
         return prompt
     
+    # ── Parámetros de compresión de historial ────────────────────────────────
+    VENTANA_MENSAJES = 10   # Mensajes recientes a conservar siempre
+    UMBRAL_COMPRESION = 20  # A partir de cuántos mensajes comprimir
+
+    def _comprimir_historial(self, historial: list) -> list:
+        """
+        Comprime el historial cuando supera UMBRAL_COMPRESION mensajes.
+        Estrategia: resumen de los mensajes viejos + ventana deslizante de los recientes.
+
+        Args:
+            historial: Lista de {role, content, es_resumen?}
+
+        Returns:
+            Lista comprimida. Si no supera el umbral, devuelve el historial tal cual.
+        """
+        if not historial or len(historial) <= self.UMBRAL_COMPRESION:
+            return historial
+
+        # Separar resumen previo (si existe), mensajes viejos y mensajes recientes
+        resumen_previo = None
+        mensajes_sin_resumen = []
+        for msg in historial:
+            if msg.get("es_resumen"):
+                resumen_previo = msg
+            else:
+                mensajes_sin_resumen.append(msg)
+
+        recientes = mensajes_sin_resumen[-self.VENTANA_MENSAJES:]
+        a_comprimir = mensajes_sin_resumen[:-self.VENTANA_MENSAJES]
+
+        if not a_comprimir:
+            return historial
+
+        # Construir texto para resumir
+        contexto_anterior = ""
+        if resumen_previo:
+            contexto_anterior = f"Resumen anterior:\n{resumen_previo['content']}\n\n"
+
+        texto_a_resumir = "\n".join(
+            f"{'Docente' if m['role'] == 'user' else 'Asistente'}: {m['content']}"
+            for m in a_comprimir
+        )
+
+        prompt_resumen = (
+            f"{contexto_anterior}"
+            f"Resumí de forma concisa los siguientes intercambios entre un docente y un asistente de planificación. "
+            f"Conservá: qué planificaciones o actividades se generaron, para qué alumnos y niveles, "
+            f"y cualquier decisión pedagógica importante. Máximo 200 palabras.\n\n"
+            f"{texto_a_resumir}"
+        )
+
+        try:
+            chat_resumen = self.model.start_chat(history=[])
+            resp = chat_resumen.send_message(prompt_resumen)
+            texto_resumen = resp.text if resp and resp.text else texto_a_resumir[:500]
+        except Exception as e:
+            logger.warning(f"No se pudo generar resumen, usando truncado: {e}")
+            texto_resumen = texto_a_resumir[:500]
+
+        nuevo_historial = [
+            {"role": "user", "content": texto_resumen, "es_resumen": True},
+            {"role": "assistant", "content": "Entendido, tengo en cuenta lo trabajado anteriormente.", "es_resumen": True},
+        ] + recientes
+
+        logger.info(f"Historial comprimido: {len(historial)} → {len(nuevo_historial)} mensajes")
+        return nuevo_historial
+
     def _llamar_gemini(self, prompt: str, historial: list = None) -> str:
         """
-        Envía el prompt a Gemini usando chat con historial si existe.
-        
+        Envía el prompt a Gemini usando chat con historial comprimido si existe.
+
         Args:
             prompt: Prompt del mensaje actual
             historial: Lista de {role, content} de mensajes anteriores
-            
+
         Returns:
             str: Respuesta de Gemini
         """
         try:
-            # Construir historial de chat en formato Gemini
+            # Comprimir historial si es necesario
+            historial_procesado = self._comprimir_historial(historial or [])
+
+            # Construir historial en formato Gemini
             chat_history = []
-            if historial:
-                for msg in historial:
-                    role = "user" if msg.get("role") == "user" else "model"
-                    content = msg.get("content", "")
-                    if content:
-                        chat_history.append({
-                            "role": role,
-                            "parts": [content]
-                        })
-            
+            for msg in historial_procesado:
+                role = "user" if msg.get("role") == "user" else "model"
+                content = msg.get("content", "")
+                if content:
+                    chat_history.append({"role": role, "parts": [content]})
+
             # Iniciar chat con historial
             chat = self.model.start_chat(history=chat_history)
             response = chat.send_message(prompt)
-            
+
             if response and response.text:
                 return response.text
             else:
                 logger.warning("Gemini devolvió respuesta vacía")
                 return "No pude generar una respuesta. Por favor, intentá reformular tu consulta."
-                
+
         except Exception as e:
             logger.error(f"Error llamando a Gemini: {str(e)}")
             raise

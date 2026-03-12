@@ -197,12 +197,14 @@ def obtener_historial(request):
                 "id": p.id,
                 "role": "user",
                 "content": p.prompt_original,
+                "es_resumen": p.es_resumen,
                 "created_at": p.created_at.isoformat()
             })
             historial.append({
                 "id": p.id,
                 "role": "assistant",
                 "content": p.respuesta_ia,
+                "es_resumen": p.es_resumen,
                 "tipo_consulta": p.actividades_json.get("tipo_consulta") if p.actividades_json else None,
                 "contexto": p.actividades_json.get("contexto_utilizado") if p.actividades_json else None,
                 "fue_util": p.fue_util,
