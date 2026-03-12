@@ -69,6 +69,7 @@ const DashboardPage = ({ asignaciones = [] }) => {
   const [statsIA, setStatsIA] = useState(null);
   const [statsDocente, setStatsDocente] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [asignacionSeleccionada, setAsignacionSeleccionada] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -92,10 +93,13 @@ const DashboardPage = ({ asignaciones = [] }) => {
   const gradosUnicos = [...new Set(asignaciones.map((a) => `${a.grado}${a.division}`))].length;
   const materiasUnicas = [...new Set(asignaciones.map((a) => a.materia_nombre))].length;
 
-  const totalNiveles =
-    (statsDocente?.niveles?.NEE ?? 0) +
-    (statsDocente?.niveles?.LP ?? 0) +
-    (statsDocente?.niveles?.LE ?? 0);
+  // Seleccionar primera asignación por defecto cuando llegan los datos
+  const nivelesData = statsDocente?.niveles_por_asignacion ?? [];
+  const asignacionActiva = asignacionSeleccionada
+    ? nivelesData.find(a => a.asignacion_id === asignacionSeleccionada) ?? nivelesData[0]
+    : nivelesData[0];
+  const nivelesActivos = asignacionActiva?.niveles ?? statsDocente?.niveles ?? { NEE: 0, LP: 0, LE: 0 };
+  const totalNiveles = (nivelesActivos.NEE ?? 0) + (nivelesActivos.LP ?? 0) + (nivelesActivos.LE ?? 0);
 
   const hora = new Date().getHours();
   const saludo = hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -163,6 +167,23 @@ const DashboardPage = ({ asignaciones = [] }) => {
               </span>
             )}
           </div>
+          {nivelesData.length > 1 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {nivelesData.map((a) => (
+                <button
+                  key={a.asignacion_id}
+                  onClick={() => setAsignacionSeleccionada(a.asignacion_id)}
+                  className={"text-xs px-3 py-1 rounded-full border transition-colors " + (
+                    (asignacionActiva?.asignacion_id === a.asignacion_id)
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "bg-white text-gray-600 border-gray-300 hover:border-indigo-400"
+                  )}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {loading ? (
             <div className="space-y-3">
@@ -178,15 +199,15 @@ const DashboardPage = ({ asignaciones = [] }) => {
           ) : (
             <div className="space-y-4">
               <NivelBar
-                label="NEE" count={statsDocente?.niveles?.NEE ?? 0}
+                label="NEE" count={nivelesActivos.NEE ?? 0}
                 total={totalNiveles} color="text-red-600" bg="bg-red-100"
               />
               <NivelBar
-                label="LP" count={statsDocente?.niveles?.LP ?? 0}
+                label="LP" count={nivelesActivos.LP ?? 0}
                 total={totalNiveles} color="text-yellow-600" bg="bg-yellow-100"
               />
               <NivelBar
-                label="LE" count={statsDocente?.niveles?.LE ?? 0}
+                label="LE" count={nivelesActivos.LE ?? 0}
                 total={totalNiveles} color="text-green-600" bg="bg-green-100"
               />
             </div>

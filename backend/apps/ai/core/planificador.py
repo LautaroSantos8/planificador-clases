@@ -77,6 +77,7 @@ class PlanificadorDocente:
         alumnos: list = None,
         actividad_original: str = "",
         actividad_evaluar: str = "",
+        historial: list = None,
     ) -> dict:
         """
         Procesa una consulta del docente y devuelve la respuesta del asistente.
@@ -140,8 +141,8 @@ class PlanificadorDocente:
                 actividad_evaluar=actividad_evaluar,
             )
             
-            # 6. Llamar a Gemini
-            respuesta = self._llamar_gemini(prompt)
+            # 6. Llamar a Gemini (con historial si existe)
+            respuesta = self._llamar_gemini(prompt, historial=historial)
             
             return {
                 "tipo_consulta": tipo_consulta,
@@ -218,28 +219,56 @@ class PlanificadorDocente:
     ) -> str:
         """
         Obtiene el proyecto áulico del docente desde ChromaDB.
-        
-        Returns:
-            str: Contenido del proyecto o mensaje de que no hay proyecto
+        Filtra por materia para evitar que un proyecto de otra materia contamine.
         """
         try:
-            # Buscar proyecto en la colección de proyectos
             resultados = self.chroma.search_proyectos(
                 query=f"proyecto {materia} {grado}",
                 docente_id=docente_id,
                 materia=materia,
                 grado=grado,
-                n_results=5
+                n_results=8  # Traer más para filtrar bien
             )
             
             if not resultados.get("documents") or not resultados["documents"][0]:
                 return MSG_SIN_PROYECTO
             
-            # Combinar chunks del proyecto
+            # Normalizar materia buscada para comparación
+            import unicodedata
+            def normalizar(t):
+                t = t.lower().strip()
+                t = unicodedata.normalize('NFD', t)
+                return ''.join(c for c in t if unicodedata.category(c) != 'Mn')
+            
+            materia_norm = normalizar(materia)
+            
+            # Mapeo de variantes para comparar
+            mapeo_materias = {
+                "matematica": ["matematica", "matematicas", "mat"],
+                "matematicas": ["matematica", "matematicas", "mat"],
+                "lengua": ["lengua", "practicas del lenguaje", "lengua y literatura"],
+                "ciencias naturales": ["ciencias naturales", "ciencias_naturales", "naturales"],
+                "ciencias sociales": ["ciencias sociales", "ciencias_sociales", "sociales"],
+            }
+            variantes_buscadas = mapeo_materias.get(materia_norm, [materia_norm])
+            
+            # Filtrar chunks cuya metadata de materias incluye la materia buscada
             proyecto_partes = []
-            for doc in resultados["documents"][0]:
-                if doc:
+            metadatas = resultados.get("metadatas", [[]])[0]
+            documentos = resultados["documents"][0]
+            
+            for doc, meta in zip(documentos, metadatas):
+                if not doc:
+                    continue
+                materias_chunk = normalizar(meta.get("materias", ""))
+                # Verificar si alguna variante de la materia está en el chunk
+                if any(v in materias_chunk for v in variantes_buscadas):
                     proyecto_partes.append(doc)
+                    
+            # Si no encontró nada con filtro estricto, usar todos (fallback)
+            if not proyecto_partes:
+                logger.warning(f"No se encontró proyecto para materia '{materia}', usando todos los chunks")
+                proyecto_partes = [doc for doc in documentos if doc]
             
             return "\n\n".join(proyecto_partes) if proyecto_partes else MSG_SIN_PROYECTO
             
@@ -300,20 +329,34 @@ class PlanificadorDocente:
         
         return prompt
     
-    def _llamar_gemini(self, prompt: str) -> str:
+    def _llamar_gemini(self, prompt: str, historial: list = None) -> str:
         """
-        Envía el prompt a Gemini y obtiene la respuesta.
+        Envía el prompt a Gemini usando chat con historial si existe.
         
         Args:
-            prompt: Prompt completo a enviar
+            prompt: Prompt del mensaje actual
+            historial: Lista de {role, content} de mensajes anteriores
             
         Returns:
             str: Respuesta de Gemini
         """
         try:
-            response = self.model.generate_content(prompt)
+            # Construir historial de chat en formato Gemini
+            chat_history = []
+            if historial:
+                for msg in historial:
+                    role = "user" if msg.get("role") == "user" else "model"
+                    content = msg.get("content", "")
+                    if content:
+                        chat_history.append({
+                            "role": role,
+                            "parts": [content]
+                        })
             
-            # Verificar si hay respuesta válida
+            # Iniciar chat con historial
+            chat = self.model.start_chat(history=chat_history)
+            response = chat.send_message(prompt)
+            
             if response and response.text:
                 return response.text
             else:

@@ -50,13 +50,13 @@ const AlumnosPage = ({ asignaciones }) => {
     setUpdatingNivel(alumnoId);
     
     try {
-      const response = await nivelesAPI.updateNivel(alumnoId, materiaId, nuevoNivel);
+      const response = await nivelesAPI.updateNivel(alumnoId, asignacionActual.id, nuevoNivel);
       
       if (response.success) {
         // Actualizar estado local
         setAlumnos(prev => prev.map(a => 
           a.id === alumnoId 
-            ? { ...a, niveles: { ...a.niveles, [materiaId]: nuevoNivel } }
+            ? { ...a, niveles: { ...a.niveles, [materiaId]: { ...a.niveles?.[materiaId], nivel: nuevoNivel } } }
             : a
         ));
       } else {
@@ -73,7 +73,8 @@ const AlumnosPage = ({ asignaciones }) => {
   // Abrir editor de observaciones
   const handleEditObservacion = (alumno) => {
     setEditingObservacion(alumno.id);
-    setObservacionTemp(alumno.observaciones || '');
+    const notaActual = alumno.niveles?.[materiaId]?.nota_contextual || '';
+    setObservacionTemp(notaActual);
   };
 
   // Guardar observación
@@ -81,12 +82,12 @@ const AlumnosPage = ({ asignaciones }) => {
     setSavingObservacion(true);
     
     try {
-      const response = await alumnosAPI.updateObservaciones(alumnoId, observacionTemp);
+      const response = await alumnosAPI.updateObservaciones(alumnoId, asignacionActual.id, observacionTemp);
       
       if (response.success) {
         setAlumnos(prev => prev.map(a => 
           a.id === alumnoId 
-            ? { ...a, observaciones: observacionTemp }
+            ? { ...a, niveles: { ...a.niveles, [materiaId]: { ...a.niveles?.[materiaId], nota_contextual: observacionTemp } } }
             : a
         ));
         setEditingObservacion(null);
@@ -110,7 +111,7 @@ const AlumnosPage = ({ asignaciones }) => {
 
   // Contar alumnos por nivel
   const contarPorNivel = (nivel) => 
-    alumnos.filter(a => (a.niveles?.[materiaId] || 'LE') === nivel).length;
+    alumnos.filter(a => (a.niveles?.[materiaId]?.nivel || 'LE') === nivel).length;
 
   if (!asignacionActual) {
     return (
@@ -226,7 +227,7 @@ const AlumnosPage = ({ asignaciones }) => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-3">
                       <select
-                        value={alumno.niveles?.[materiaId] || 'LE'}
+                        value={alumno.niveles?.[materiaId]?.nivel || 'LE'}
                         onChange={(e) => handleNivelChange(alumno.id, e.target.value)}
                         disabled={updatingNivel === alumno.id}
                         className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
@@ -235,7 +236,7 @@ const AlumnosPage = ({ asignaciones }) => {
                         <option value="LP">LP - Logros en Proceso</option>
                         <option value="LE">LE - Logros Esperados</option>
                       </select>
-                      <NivelBadge nivel={alumno.niveles?.[materiaId] || 'LE'} size="sm" />
+                      <NivelBadge nivel={alumno.niveles?.[materiaId]?.nivel || 'LE'} size="sm" />
                       {updatingNivel === alumno.id && (
                         <svg className="animate-spin h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -273,7 +274,7 @@ const AlumnosPage = ({ asignaciones }) => {
                     ) : (
                       <div className="flex items-center gap-2">
                         <p className="text-sm text-gray-500 flex-1">
-                          {alumno.observaciones || <span className="italic text-gray-400">Sin observaciones</span>}
+                          {alumno.niveles?.[materiaId]?.nota_contextual || <span className="italic text-gray-400">Sin observaciones para esta materia</span>}
                         </p>
                         <button
                           onClick={() => handleEditObservacion(alumno)}

@@ -323,7 +323,10 @@ def alumnos_por_grado_division(request):
             niveles = {}
             for nivel in alumno.niveles.select_related('asignacion', 'asignacion__materia'):
                 materia_id = str(nivel.asignacion.materia.id)
-                niveles[materia_id] = nivel.nivel
+                niveles[materia_id] = {
+                    'nivel': nivel.nivel,
+                    'nota_contextual': nivel.nota_contextual or '',
+                }
             
             alumnos_data.append({
                 'id': alumno.id,
@@ -332,7 +335,6 @@ def alumnos_por_grado_division(request):
                 'grado': alumno.grado,
                 'division': alumno.division,
                 'turno': alumno.turno,
-                'observaciones': alumno.observaciones,
                 'niveles': niveles,
                 'institucion': alumno.institucion.nombre if alumno.institucion else None,
             })
@@ -353,18 +355,18 @@ def alumnos_por_grado_division(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def actualizar_nivel_alumno(request):
-    """Actualiza el nivel de un alumno en una materia específica."""
+    """Actualiza el nivel de un alumno usando asignacion_id directo."""
     try:
         data = json.loads(request.body)
         alumno_id = data.get('alumno_id')
-        materia_id = data.get('materia_id')
+        asignacion_id = data.get('asignacion_id')
         nivel = data.get('nivel')
         motivo = data.get('motivo', '')
         
-        if not all([alumno_id, materia_id, nivel]):
+        if not all([alumno_id, asignacion_id, nivel]):
             return JsonResponse({
                 'success': False,
-                'error': 'Se requiere alumno_id, materia_id y nivel'
+                'error': 'Se requiere alumno_id, asignacion_id y nivel'
             }, status=400)
         
         if nivel not in ['NEE', 'LP', 'LE']:
@@ -374,18 +376,7 @@ def actualizar_nivel_alumno(request):
             }, status=400)
         
         alumno = Alumno.objects.get(id=alumno_id)
-        
-        asignacion = AsignacionDocente.objects.filter(
-            materia_id=materia_id,
-            grado=alumno.grado,
-            division=alumno.division
-        ).first()
-        
-        if not asignacion:
-            return JsonResponse({
-                'success': False,
-                'error': 'No se encontró una asignación para esta materia y grado/división'
-            }, status=404)
+        asignacion = AsignacionDocente.objects.get(id=asignacion_id)
         
         nivel_obj, created = NivelAlumno.objects.get_or_create(
             alumno=alumno,
@@ -402,7 +393,7 @@ def actualizar_nivel_alumno(request):
             'success': True,
             'nivel': {
                 'alumno_id': alumno.id,
-                'materia_id': materia_id,
+                'asignacion_id': asignacion_id,
                 'nivel': nivel_obj.nivel,
                 'created': created
             }
@@ -412,6 +403,11 @@ def actualizar_nivel_alumno(request):
         return JsonResponse({
             'success': False,
             'error': 'Alumno no encontrado'
+        }, status=404)
+    except AsignacionDocente.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Asignación no encontrada'
         }, status=404)
     except Exception as e:
         return JsonResponse({
@@ -423,34 +419,37 @@ def actualizar_nivel_alumno(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def actualizar_observaciones(request):
-    """Actualiza las observaciones de un alumno."""
+    """Actualiza la nota contextual de un alumno en una asignación específica."""
     try:
         data = json.loads(request.body)
         alumno_id = data.get('alumno_id')
-        observaciones = data.get('observaciones', '')
+        asignacion_id = data.get('asignacion_id')
+        nota_contextual = data.get('nota_contextual', '')
         
-        if not alumno_id:
+        if not alumno_id or not asignacion_id:
             return JsonResponse({
                 'success': False,
-                'error': 'Se requiere alumno_id'
+                'error': 'Se requiere alumno_id y asignacion_id'
             }, status=400)
         
-        alumno = Alumno.objects.get(id=alumno_id)
-        alumno.observaciones = observaciones
-        alumno.save()
+        nivel_obj = NivelAlumno.objects.get(
+            alumno_id=alumno_id,
+            asignacion_id=asignacion_id
+        )
+        nivel_obj.nota_contextual = nota_contextual
+        nivel_obj.save()
         
         return JsonResponse({
             'success': True,
-            'alumno': {
-                'id': alumno.id,
-                'observaciones': alumno.observaciones
-            }
+            'alumno_id': alumno_id,
+            'asignacion_id': asignacion_id,
+            'nota_contextual': nivel_obj.nota_contextual
         })
         
-    except Alumno.DoesNotExist:
+    except NivelAlumno.DoesNotExist:
         return JsonResponse({
             'success': False,
-            'error': 'Alumno no encontrado'
+            'error': 'No se encontró el nivel del alumno para esta asignación'
         }, status=404)
     except Exception as e:
         return JsonResponse({
@@ -526,7 +525,23 @@ def estadisticas_docente(request):
         else:
             total_alumnos = 0
 
-        # Niveles de alumnos en asignaciones del docente
+        # Niveles por asignación
+        niveles_por_asignacion = []
+        for asig in asignaciones:
+            qs = NivelAlumno.objects.filter(asignacion=asig)
+            niveles_por_asignacion.append({
+                'asignacion_id': asig.id,
+                'label': f'{asig.materia.nombre} {asig.grado}°{asig.division}',
+                'materia': asig.materia.nombre,
+                'grado': asig.grado,
+                'division': asig.division,
+                'niveles': {
+                    'NEE': qs.filter(nivel='NEE').count(),
+                    'LP':  qs.filter(nivel='LP').count(),
+                    'LE':  qs.filter(nivel='LE').count(),
+                }
+            })
+        # Totales globales (para compatibilidad)
         niveles_qs = NivelAlumno.objects.filter(asignacion__docente=docente)
         nee = niveles_qs.filter(nivel='NEE').count()
         lp  = niveles_qs.filter(nivel='LP').count()
@@ -551,6 +566,7 @@ def estadisticas_docente(request):
                 "asignaciones": asignaciones.count(),
                 "total_alumnos": total_alumnos,
                 "niveles": {"NEE": nee, "LP": lp, "LE": le},
+                "niveles_por_asignacion": niveles_por_asignacion,
                 "planificaciones_generadas": total_planificaciones,
                 "feedback_positivo": feedback_positivo,
                 "feedback_negativo": feedback_negativo,

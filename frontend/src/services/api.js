@@ -93,10 +93,11 @@ export const alumnosAPI = {
     return response.data;
   },
 
-  updateObservaciones: async (alumnoId, observaciones) => {
+  updateObservaciones: async (alumnoId, asignacionId, notaContextual) => {
     const response = await api.post('/planificacion/alumnos/observaciones/', {
       alumno_id: alumnoId,
-      observaciones: observaciones,
+      asignacion_id: asignacionId,
+      nota_contextual: notaContextual,
     });
     return response.data;
   },
@@ -117,10 +118,10 @@ export const nivelesAPI = {
     return response.data;
   },
 
-  updateNivel: async (alumnoId, materiaId, nivel, motivo = '') => {
+  updateNivel: async (alumnoId, asignacionId, nivel, motivo = '') => {
     const response = await api.post('/planificacion/niveles/actualizar/', {
       alumno_id: alumnoId,
-      materia_id: materiaId,
+      asignacion_id: asignacionId,
       nivel: nivel,
       motivo: motivo,
     });
@@ -168,7 +169,7 @@ export const documentosAPI = {
 // ============================================
 
 export const iaAPI = {
-  consultar: async (consulta, grado, division, materia, alumnos = [], asignacionId = null) => {
+  consultar: async (consulta, grado, division, materia, alumnos = [], asignacionId = null, historial = []) => {
     const response = await api.post('/ai/consultar/', {
       consulta,
       grado,
@@ -176,6 +177,7 @@ export const iaAPI = {
       materia,
       alumnos,
       asignacion_id: asignacionId,
+      historial,
     });
     return response.data;
   },

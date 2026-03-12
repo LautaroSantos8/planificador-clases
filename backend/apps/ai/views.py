@@ -100,6 +100,7 @@ def consultar_asistente(request):
         actividad_original = data.get("actividad_original", "")
         actividad_evaluar = data.get("actividad_evaluar", "")
         asignacion_id = data.get("asignacion_id")
+        historial = data.get("historial", [])  # Lista de {role, content}
         
         # Validar grado y materia
         if not grado or not materia:
@@ -122,6 +123,7 @@ def consultar_asistente(request):
             alumnos=alumnos,
             actividad_original=actividad_original,
             actividad_evaluar=actividad_evaluar,
+            historial=historial,
         )
         
         # Guardar en historial si hay asignacion_id

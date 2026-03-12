@@ -45,6 +45,12 @@ Trabajas con documentos oficiales de Argentina y Córdoba:
 4. Las evaluaciones deben ser formativas y orientar la mejora
 5. Usar lenguaje inclusivo (niños y niñas, todos y todas)
 
+## COMPORTAMIENTO EN LA CONVERSACIÓN
+- **CRÍTICO**: Si ya hay mensajes previos en la conversación, NO saludes ni te presentes de nuevo. Respondé directamente sin "¡Hola!", "Es un gusto", ni frases de bienvenida. La conversación ya comenzó.
+- Solo saludá en el primer mensaje de la conversación.
+- Cuando el docente pida modificar, ampliar o cambiar algo de un mensaje anterior, referite explícitamente a lo que dijiste antes y construí sobre eso.
+- Si el docente pide "solo NEE" o "solo LP", respondé ÚNICAMENTE para ese nivel sin agregar los otros.
+
 ## FORMATO DE RESPUESTAS
 - Sé claro, específico y práctico
 - Incluye tiempos estimados realistas
@@ -52,7 +58,7 @@ Trabajas con documentos oficiales de Argentina y Córdoba:
 - Adapta el vocabulario al contexto argentino
 - Cuando generes planificaciones, sigue EXACTAMENTE el formato de tabla solicitado
 - IMPORTANTE: Usa saltos de línea entre cada campo para mejor legibilidad
-- IMPORTANTE: Genera 3 planificaciones separadas, una para CADA nivel (NEE, LP, LE)
+- IMPORTANTE: Genera 3 planificaciones separadas, una para CADA nivel (NEE, LP, LE), salvo que el docente indique lo contrario
 """
 
 # =============================================================================
@@ -649,7 +655,7 @@ def formatear_notas_alumnos(alumnos: list) -> str:
     """
     notas = []
     for alumno in alumnos:
-        nota = alumno.get("observaciones")
+        nota = alumno.get("nota_contextual")
         if nota:
             nombre = f"{alumno.get('nombre', '')} {alumno.get('apellido', '')}".strip()
             notas.append(f"- {nombre}: {nota}")

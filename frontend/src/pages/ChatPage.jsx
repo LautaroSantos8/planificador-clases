@@ -218,8 +218,8 @@ const ChatPage = ({ asignaciones }) => {
         return response.alumnos.map((a) => ({
           nombre: a.nombre,
           apellido: a.apellido,
-          nivel: a.niveles?.[materiaId] || 'LE',
-          observaciones: a.observaciones || '',
+          nivel: a.niveles?.[materiaId]?.nivel || 'LE',
+          nota_contextual: a.niveles?.[materiaId]?.nota_contextual || '',
         }));
       }
     } catch (err) {
@@ -353,10 +353,18 @@ ${alumnos.length > 0
     setIsLoading(true);
     try {
       const alumnos = await getAlumnos();
+
+      // Construir historial para Gemini (excluyendo el mensaje que acaba de agregar)
+      const historialParaApi = messages
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .filter((m) => !m.isError && m.content)
+        .map((m) => ({ role: m.role, content: m.content }));
+
       const response = await iaAPI.consultar(
         userMessage, grado, division,
         asignacionActual?.materia_nombre || '',
-        alumnos, asignacionActual?.id
+        alumnos, asignacionActual?.id,
+        historialParaApi
       );
       if (response.success) {
         setMessages((prev) => [...prev, {

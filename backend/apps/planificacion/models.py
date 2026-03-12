@@ -23,8 +23,6 @@ class Alumno(models.Model):
     grado = models.IntegerField(choices=GRADO_CHOICES)
     turno = models.CharField(max_length=1, choices=TURNO_CHOICES)
     division = models.CharField(max_length=1, choices=AsignacionDocente.DIVISION_CHOICES, default='A')
-    # Nota contextual general (opcional)
-    observaciones = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

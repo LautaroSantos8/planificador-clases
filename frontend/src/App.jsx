@@ -71,7 +71,8 @@ const AppContent = () => {
       }
     } catch (error) {
       console.error('Error creando asignación:', error);
-      return { success: false, error: 'Error de conexión' };
+      const msg = error?.response?.data?.error || 'Error de conexión';
+      return { success: false, error: msg };
     }
   };
 

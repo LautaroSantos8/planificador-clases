@@ -206,6 +206,16 @@ def eliminar_asignacion(request, asignacion_id):
                 "error": "Asignación no encontrada"
             }, status=404)
         
+        # Eliminar chunks de ChromaDB de todos los documentos de esta asignación
+        from apps.planificacion.models import DocumentoDocente
+        from apps.planificacion.views import eliminar_chunks_de_chroma
+        documentos = DocumentoDocente.objects.filter(asignacion=asignacion, procesado=True)
+        for doc in documentos:
+            try:
+                eliminar_chunks_de_chroma(doc)
+            except Exception as e:
+                logger.warning(f'No se pudieron eliminar chunks del documento {doc.id}: {e}')
+
         asignacion.delete()
         
         return JsonResponse({
