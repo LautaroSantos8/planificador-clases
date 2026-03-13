@@ -187,13 +187,47 @@ const ExportDropdown = ({ messageId, exportando, onExport }) => {
   );
 };
 
+const ChatInput = React.memo(({ onSubmit, isLoading }) => {
+  const [value, setValue] = useState('');
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!value.trim() || isLoading) return;
+    onSubmit(value.trim());
+    setValue('');
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white border-t border-gray-200 p-4">
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="Escribí tu consulta..."
+          disabled={isLoading}
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50"
+        />
+        <button
+          type="submit"
+          disabled={isLoading || !value.trim()}
+          className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </button>
+      </div>
+    </form>
+  );
+});
 // ─────────────────────────────────────────────────────────────────────────────
 // ChatPage principal
 // ─────────────────────────────────────────────────────────────────────────────
 const ChatPage = ({ asignaciones }) => {
   const { grado, division, materiaId } = useParams();
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingHistorial, setLoadingHistorial] = useState(true);
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -344,11 +378,8 @@ ${alumnos.length > 0
   };
 
   // ── Enviar consulta ─────────────────────────────────────────────────────────
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-    const userMessage = input.trim();
-    setInput('');
+  const handleSubmit = async (userMessage) => {
+    if (!userMessage || isLoading) return;
     setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
     try {
@@ -669,7 +700,7 @@ ${alumnos.length > 0
             {sugerencias.map((sug, i) => (
               <button
                 key={i}
-                onClick={() => setInput(sug)}
+                onClick={() => handleSubmit(sug)}
                 className="text-sm px-3 py-1.5 bg-white border border-gray-200 rounded-full hover:bg-indigo-50 hover:border-indigo-200 text-gray-700 transition-colors"
               >
                 {sug}
@@ -680,28 +711,7 @@ ${alumnos.length > 0
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="bg-white border-t border-gray-200 p-4">
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribí tu consulta..."
-            disabled={isLoading}
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
-        </div>
-      </form>
+      <ChatInput onSubmit={handleSubmit} isLoading={isLoading} />
     </div>
   );
 };
