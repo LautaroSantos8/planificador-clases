@@ -11,9 +11,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-producti
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # ALLOWED_HOSTS: en producción se lee de la variable de entorno
-# Ej: ALLOWED_HOSTS=miapp.railway.app,192.168.1.10
 _allowed = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+
+# Railway agrega automáticamente la URL del servicio — permitir cualquier subdominio de railway.app
+ALLOWED_HOSTS += ['.railway.app', '.up.railway.app']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -35,6 +37,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Para servir archivos estáticos en producción
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,15 +88,13 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# CORS: en producción se lee de variable de entorno
-# Ej: CORS_ORIGINS=https://miapp.railway.app,http://192.168.1.10
+# CORS
 _cors = os.getenv('CORS_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors.split(',') if o.strip()]
-
-# En producción también se puede habilitar CORS por regex si la URL no se conoce de antemano
 CORS_ALLOW_CREDENTIALS = True
 
 AUTH_USER_MODEL = 'docentes.Docente'

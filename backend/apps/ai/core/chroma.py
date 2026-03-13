@@ -45,9 +45,10 @@ class ChromaManager:
         # Inicializar cliente persistente
         self.client = chromadb.PersistentClient(path=str(chroma_path))
         
-        # Usar modelo multilingual para español
-        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
-            model_name="paraphrase-multilingual-MiniLM-L12-v2"
+        # Embeddings de Google (no requiere torch ni modelos locales)
+        self.embedding_function = embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+            api_key=settings.GEMINI_API_KEY,
+            model_name="models/gemini-embedding-001"
         )
         
         # Inicializar las 4 colecciones
