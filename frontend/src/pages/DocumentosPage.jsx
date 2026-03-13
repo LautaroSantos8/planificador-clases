@@ -41,6 +41,7 @@ const DocumentosPage = ({ asignaciones }) => {
       }
     };
     fetchDocumentos();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asignacionActual?.id]);
 
   const handleFileChange = (e) => {
