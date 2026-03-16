@@ -69,7 +69,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--carpeta',
             type=str,
-            default='data/curricula',
+            default=str(settings.CURRICULA_DIR),
             help='Carpeta con los PDFs (default: data/curricula)',
         )
         parser.add_argument(
