@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 
 const Navbar = () => {
-  const { docente, logout, updateToken } = useAuth();
+  const { docente, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
