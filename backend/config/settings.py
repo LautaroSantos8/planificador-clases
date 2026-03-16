@@ -67,13 +67,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -100,8 +93,15 @@ CORS_ALLOW_CREDENTIALS = True
 AUTH_USER_MODEL = 'docentes.Docente'
 
 DATA_DIR = BASE_DIR / 'data'
-CURRICULA_DIR = DATA_DIR / 'curricula'
+CURRICULA_DIR = BASE_DIR / 'curricula'
 CHROMA_DIR = DATA_DIR / 'chroma'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': DATA_DIR / 'db.sqlite3',
+    }
+}
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
