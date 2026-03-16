@@ -343,6 +343,29 @@ def generar_pdf(
 
     flush_table()
 
+    # ── Cuadro de observaciones ──────────────────────────────────────────────
+    story.append(Spacer(1, 16))
+    story.append(Paragraph(
+        "Observaciones del docente",
+        ParagraphStyle("obs_titulo", parent=styles["Normal"],
+                    fontSize=10, fontName="Helvetica-Bold",
+                    textColor=primario, spaceAfter=4)
+    ))
+    obs_data = [["Anotá aquí tus observaciones sobre cómo resultó la clase:"],
+                [" "], [" "], [" "], [" "]]
+    obs_table = Table(obs_data, colWidths=[17*cm])
+    obs_table.setStyle(TableStyle([
+        ("BOX", (0,0), (-1,-1), 1, colors.HexColor("#D1D5DB")),
+        ("INNERGRID", (0,0), (-1,-1), 0.5, colors.HexColor("#E5E7EB")),
+        ("FONTSIZE", (0,0), (-1,-1), 9),
+        ("TEXTCOLOR", (0,0), (0,0), colors.HexColor("#6B7280")),
+        ("TOPPADDING", (0,0), (-1,-1), 8),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 8),
+        ("LEFTPADDING", (0,0), (-1,-1), 8),
+        ("MINROWHEIGHT", (0,1), (-1,-1), 20),
+    ]))
+    story.append(obs_table)
+
     # ── Pie de página ─────────────────────────────────────────────────────────
     story.append(Spacer(1, 12))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#E5E7EB")))
@@ -581,6 +604,29 @@ def generar_docx(
             current_table_rows.append(list(content))
 
     flush_table_docx()
+
+    # ── Cuadro de observaciones ──────────────────────────────────────────────
+    doc.add_paragraph()
+    p_obs_titulo = doc.add_paragraph()
+    run_obs = p_obs_titulo.add_run("Observaciones del docente")
+    run_obs.bold = True
+    run_obs.font.size = Pt(10)
+    run_obs.font.color.rgb = primario
+
+    obs_tbl = doc.add_table(rows=6, cols=1)
+    obs_tbl.style = "Table Grid"
+    # Primera fila con indicación
+    obs_tbl.rows[0].cells[0].paragraphs[0].add_run(
+        "Anotá aquí tus observaciones sobre cómo resultó la clase:"
+    ).font.size = Pt(9)
+    obs_tbl.rows[0].cells[0].paragraphs[0].runs[0].font.color.rgb = RGBColor(0x6B, 0x72, 0x80)
+    # Filas vacías para escribir
+    for i in range(1, 6):
+        cell = obs_tbl.rows[i].cells[0]
+        cell.paragraphs[0].add_run(" ")
+        from docx.shared import Cm as DocxCm
+        cell._tc.get_or_add_tcPr()
+    doc.add_paragraph()
 
     # ── Pie ───────────────────────────────────────────────────────────────────
     doc.add_paragraph()
