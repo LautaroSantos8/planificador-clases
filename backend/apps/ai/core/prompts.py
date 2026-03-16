@@ -226,46 +226,65 @@ TEMPLATE_ACTIVIDADES = """## SOLICITUD DEL DOCENTE
 ## PROYECTO ÁULICO DEL DOCENTE
 {proyecto_aulico}
 
-## INSTRUCCIONES
-Genera entre 3 y 5 ACTIVIDADES CONCRETAS relacionadas con la solicitud del docente.
+## INSTRUCCIONES CRÍTICAS
 
-Para cada actividad, usa este formato (cada campo en su propia línea):
+El docente necesita ejercicios y problemas concretos para trabajar en clase o en el cuaderno.
+NO generes planificaciones, ni momentos de clase, ni tablas pedagógicas.
+Generá directamente los ejercicios/problemas listos para que el alumno los resuelva.
 
----
-
-### ACTIVIDAD [N]: [Nombre de la actividad]
-
-**Objetivo:** [Qué se busca lograr]
-
-**Contenido curricular:** [De las progresiones]
-
-**Duración estimada:** [X minutos]
-
-**Materiales:** [Lista de recursos necesarios]
-
-**Descripción:**
-[Explicación detallada de la actividad]
-
-**Adaptaciones por nivel:**
-
-*NEE:* [Cómo adaptar para rezago significativo]
-
-*LP:* [Cómo adaptar para logros en proceso]
-
-*LE:* [Cómo adaptar/extender para logros esperados]
-
-**Evaluación:** [Cómo saber si se logró el objetivo]
+Organizá la respuesta así:
 
 ---
 
-Las actividades deben:
-1. Estar alineadas con el proyecto áulico si existe
-2. Ser progresivas en complejidad
-3. Usar recursos accesibles en escuelas públicas
-4. Incluir trabajo individual y colaborativo
-5. Permitir evaluación formativa
+## EJERCICIOS Y PROBLEMAS — [TEMA]
 
-Genera las actividades ahora."""
+### Para NEE (Rezago Significativo) — [Nombres de alumnos NEE]
+*Nivel: [1-2 grados por debajo. Números pequeños, consignas simples, apoyo concreto.]*
+
+1. [Ejercicio o problema concreto]
+2. [Ejercicio o problema concreto]
+3. [Ejercicio o problema concreto]
+4. [Ejercicio o problema concreto]
+5. [Ejercicio o problema concreto]
+
+---
+
+### Para LP (Logros en Proceso) — [Nombres de alumnos LP]
+*Nivel: [1 grado por debajo. Complejidad intermedia.]*
+
+1. [Ejercicio o problema concreto]
+2. [Ejercicio o problema concreto]
+3. [Ejercicio o problema concreto]
+4. [Ejercicio o problema concreto]
+5. [Ejercicio o problema concreto]
+
+---
+
+### Para LE (Logros Esperados) — [Nombres de alumnos LE]
+*Nivel: [Acorde al grado o con desafío extra.]*
+
+1. [Ejercicio o problema concreto]
+2. [Ejercicio o problema concreto]
+3. [Ejercicio o problema concreto]
+4. [Ejercicio o problema concreto]
+5. [Ejercicio o problema concreto]
+
+---
+
+## INSTRUCCIONES ADICIONALES PARA EL DOCENTE
+[2-3 sugerencias breves sobre cómo usar estos ejercicios]
+
+---
+
+REGLAS PARA GENERAR LOS EJERCICIOS:
+- Si son matemáticas: escribí las operaciones, los números y los problemas completos. Ejemplo: "Resolvé: 234 × 7 ="
+- Si son problemas con contexto: usá nombres de personas, objetos y situaciones del entorno escolar argentino
+- Si el docente pidió solo un nivel (ej: "solo para NEE"), generá ÚNICAMENTE ese nivel
+- Si hay proyecto áulico, usá su temática como contexto de los problemas. Ejemplo: si el proyecto es de árboles, "Juan plantó 24 árboles en 3 filas iguales. ¿Cuántos árboles hay en cada fila?"
+- Generá mínimo 5 ejercicios por nivel, máximo 10
+- Los ejercicios deben ir del más simple al más complejo dentro de cada nivel
+
+Generá los ejercicios ahora."""
 
 # =============================================================================
 # TEMPLATE: CONSULTAR CURRÍCULA (Caso 3)
@@ -542,8 +561,14 @@ TIPOS_CONSULTA = {
     ],
     "actividades": [
         "actividad", "actividades", "ejercicio", "ejercicios",
-        "tarea", "tareas", "dame actividades", "necesito actividades",
-        "proponé", "propone", "sugiere", "sugerí"
+        "ejercitación", "ejercitacion", "problema", "problemas",
+        "problemita", "problemitas", "práctica", "practica",
+        "prácticas", "practicas", "tarea", "tareas",
+        "dame actividades", "dame ejercicios", "dame problemas",
+        "necesito actividades", "necesito ejercicios", "necesito problemas",
+        "proponé", "propone", "sugiere", "sugerí",
+        "algo para practicar", "para practicar", "para trabajar",
+        "para resolver"
     ],
     "curricula": [
         "contenido", "contenidos", "currícula", "curricula",
@@ -636,9 +661,21 @@ def detectar_tipo_consulta(texto: str) -> str:
     if quiere_generar and menciona_planificacion:
         return "planificacion"
     
-    # Si menciona "actividad/es" Y quiere generar → es actividades
-    menciona_actividades = any(palabra in texto_lower for palabra in ["actividad", "actividades"])
+    # Si menciona ejercicios/problemas/actividades Y quiere generar → es actividades
+    PALABRAS_EJERCICIOS = [
+        "actividad", "actividades", "ejercicio", "ejercicios",
+        "ejercitación", "ejercitacion", "problema", "problemas",
+        "problemita", "problemitas", "práctica", "practica",
+        "prácticas", "practicas", "para practicar", "para resolver",
+        "para trabajar"
+    ]
+    menciona_actividades = any(palabra in texto_lower for palabra in PALABRAS_EJERCICIOS)
     if quiere_generar and menciona_actividades and not menciona_planificacion:
+        return "actividades"
+
+    # Si el mensaje contiene palabras de ejercicios sin palabras de generación explícita
+    # pero tiene intención clara → también es actividades
+    if menciona_actividades and not menciona_planificacion:
         return "actividades"
     
     # Contar coincidencias por tipo
