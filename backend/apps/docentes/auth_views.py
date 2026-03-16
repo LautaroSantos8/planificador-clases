@@ -158,7 +158,50 @@ def registro_view(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
+@csrf_exempt
+def cambiar_password_view(request):
+    """Endpoint para cambiar la contraseña del docente autenticado."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+    
+    user = get_user_from_token(request)
+    if not user:
+        return JsonResponse({'error': 'No autenticado'}, status=401)
+    
+    try:
+        data = json.loads(request.body)
+        password_actual = data.get('password_actual')
+        password_nuevo = data.get('password_nuevo')
+        
+        if not password_actual or not password_nuevo:
+            return JsonResponse({'error': 'Contraseña actual y nueva son requeridas'}, status=400)
+        
+        if len(password_nuevo) < 4:
+            return JsonResponse({'error': 'La contraseña nueva debe tener al menos 4 caracteres'}, status=400)
+        
+        # Verificar contraseña actual
+        if not user.check_password(password_actual):
+            return JsonResponse({'error': 'La contraseña actual es incorrecta'}, status=400)
+        
+        # Cambiar contraseña
+        user.set_password(password_nuevo)
+        user.save()
+        
+        # Renovar token
+        Token.objects.filter(user=user).delete()
+        token = Token.objects.create(user=user)
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Contraseña cambiada correctamente',
+            'token': token.key
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'JSON inválido'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+        
 def get_user_from_token(request):
     """
     Función auxiliar para obtener el usuario desde el token.
