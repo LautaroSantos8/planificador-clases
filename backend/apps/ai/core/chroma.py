@@ -39,7 +39,7 @@ class ChromaManager:
             return
         
         # Crear directorio si no existe
-        chroma_path = getattr(settings, 'CHROMA_DIR', './data/chroma')
+        chroma_path = getattr(settings, 'CHROMA_DIR', str(settings.BASE_DIR / 'data' / 'chroma'))
         os.makedirs(chroma_path, exist_ok=True)
         
         # Inicializar cliente persistente
