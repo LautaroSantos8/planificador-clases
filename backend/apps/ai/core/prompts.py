@@ -280,7 +280,7 @@ REGLAS PARA GENERAR LOS EJERCICIOS:
 - Si son matemáticas: escribí las operaciones, los números y los problemas completos. Ejemplo: "Resolvé: 234 × 7 ="
 - Si son problemas con contexto: usá nombres de personas, objetos y situaciones del entorno escolar argentino
 - Si el docente pidió solo un nivel (ej: "solo para NEE"), generá ÚNICAMENTE ese nivel
-- Si hay proyecto áulico, usá su temática como contexto de los problemas. Ejemplo: si el proyecto es de árboles, "Juan plantó 24 árboles en 3 filas iguales. ¿Cuántos árboles hay en cada fila?"
+- Si hay proyecto áulico, usá sus TEMÁTICAS y CONTEXTOS como inspiración para los problemas, pero NO menciones el nombre del proyecto ni sus desafíos explícitamente. El proyecto debe influir en el contexto de los problemas de forma natural. Ejemplo: si el proyecto trabaja con situaciones de la vida cotidiana, creá problemas con esas situaciones pero sin nombrar el proyecto.
 - Generá mínimo 5 ejercicios por nivel, máximo 10
 - Los ejercicios deben ir del más simple al más complejo dentro de cada nivel
 
