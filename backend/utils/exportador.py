@@ -124,6 +124,7 @@ def _strip_md_inline(text: str) -> str:
     text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
     text = re.sub(r"\*(.+?)\*", r"\1", text)
     text = re.sub(r"`(.+?)`", r"\1", text)
+    text = text.replace(r"\_", "_")
     return text
 
 
@@ -135,7 +136,7 @@ def _md_inline_to_reportlab(text: str) -> str:
     text = re.sub(r"\*(.+?)\*", r"<i>\1</i>", text)
     # Code: `texto` → <font face="Courier">texto</font>
     text = re.sub(r"`(.+?)`", r'<font face="Courier">\1</font>', text)
-    # Escapar & que no son entidades
+    text = text.replace(r"\_", "_")
     text = re.sub(r"&(?![a-zA-Z]+;|#\d+;)", "&amp;", text)
     return text
 

@@ -561,110 +561,105 @@ ${alumnos.length > 0
                   {/* ── Barra inferior: feedback + exportar ── */}
                   {message.id && !message.isError && (
                     <div className="mt-4 pt-3 border-t border-gray-100">
+                      <div className="flex items-center justify-between flex-wrap gap-3">
 
-                      {/* Estado: ya dio feedback */}
-                      {message.fue_util !== null && message.fue_util !== undefined ? (
-                        <div className="flex items-center gap-2 text-sm">
-                          {message.fue_util ? (
-                            <span className="text-green-600 flex items-center gap-1">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              ¡Gracias por tu feedback!
-                            </span>
-                          ) : (
+                        {/* Feedback — izquierda */}
+                        <div className="flex items-center gap-2">
+                          {message.fue_util !== null && message.fue_util !== undefined ? (
                             <div>
-                              <span className="text-orange-600 flex items-center gap-1">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                                Feedback recibido
-                              </span>
-                              {message.feedback && (
-                                <p className="mt-1 text-gray-500 italic text-xs">"{message.feedback}"</p>
+                              {message.fue_util ? (
+                                <span className="text-green-600 flex items-center gap-1 text-sm">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  ¡Gracias por tu feedback!
+                                </span>
+                              ) : (
+                                <div>
+                                  <span className="text-orange-600 flex items-center gap-1 text-sm">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Feedback recibido
+                                  </span>
+                                  {message.feedback && (
+                                    <p className="mt-1 text-gray-500 italic text-xs">"{message.feedback}"/</p>
+                                  )}
+                                </div>
                               )}
+                            </div>
+                          ) : feedbackOpen === message.id ? (
+                            <div className="space-y-3">
+                              <p className="text-sm text-gray-600">¿Qué podríamos mejorar?</p>
+                              <textarea
+                                value={feedbackText}
+                                onChange={(e) => setFeedbackText(e.target.value)}
+                                placeholder="Ej: Las actividades para NEE son muy complejas..."
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleFeedbackNegativeSubmit(message.id)}
+                                  disabled={savingFeedback}
+                                  className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                  {savingFeedback ? 'Enviando...' : 'Enviar feedback'}
+                                </button>
+                                <button
+                                  onClick={handleFeedbackCancel}
+                                  className="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 font-medium">¿Te fue útil?</span>
+                              <button
+                                onClick={() => handleFeedbackPositive(message.id)}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
+                                title="Sí, útil"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleFeedbackNegativeOpen(message.id)}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                title="No, mejorable"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                    d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                                </svg>
+                              </button>
                             </div>
                           )}
                         </div>
 
-                      ) : feedbackOpen === message.id ? (
-                        /* Formulario feedback negativo */
-                        <div className="space-y-3">
-                          <p className="text-sm text-gray-600">¿Qué podríamos mejorar?</p>
-                          <textarea
-                            value={feedbackText}
-                            onChange={(e) => setFeedbackText(e.target.value)}
-                            placeholder="Ej: Las actividades para NEE son muy complejas..."
-                            rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        {/* Descarga — derecha, SIEMPRE visible */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {message.contexto && message.contexto.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {message.contexto.slice(0, 3).map((ctx, i) => (
+                                <span key={i} className="text-xs bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-medium">
+                                  {ctx.fuente}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <ExportDropdown
+                            messageId={message.id}
+                            exportando={exportando}
+                            onExport={handleExport}
                           />
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleFeedbackNegativeSubmit(message.id)}
-                              disabled={savingFeedback}
-                              className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                              {savingFeedback ? 'Enviando...' : 'Enviar feedback'}
-                            </button>
-                            <button
-                              onClick={handleFeedbackCancel}
-                              className="px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 rounded-lg"
-                            >
-                              Cancelar
-                            </button>
-                          </div>
                         </div>
 
-                      ) : (
-                        /* Fila normal: 👍👎 izquierda · chips + Descargar derecha */
-                        <div className="flex items-center justify-between flex-wrap gap-3">
-
-                          {/* Feedback botones */}
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-400 font-medium">¿Te fue útil?</span>
-                            <button
-                              onClick={() => handleFeedbackPositive(message.id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                              title="Sí, útil"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleFeedbackNegativeOpen(message.id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                              title="No, mejorable"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                  d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
-                              </svg>
-                            </button>
-                          </div>
-
-                          {/* Derecha: chips de fuente + botón Descargar */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {message.contexto && message.contexto.length > 0 && (
-                              <div className="flex flex-wrap gap-1">
-                                {message.contexto.slice(0, 3).map((ctx, i) => (
-                                  <span key={i}
-                                    className="text-xs bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-medium">
-                                    {ctx.fuente}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            <ExportDropdown
-                              messageId={message.id}
-                              exportando={exportando}
-                              onExport={handleExport}
-                            />
-                          </div>
-
-                        </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
