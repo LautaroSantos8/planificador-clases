@@ -17,7 +17,7 @@ const StatCard = ({ icon, label, value, color, sublabel }) => (
 );
 
 // ── Barra de nivel ────────────────────────────────────────────────────────────
-const NivelBar = ({ label, count, total, color, bg }) => {
+const NivelBar = ({ label, count, total, color, bg, barColor }) => {
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   return (
     <div>
@@ -30,7 +30,7 @@ const NivelBar = ({ label, count, total, color, bg }) => {
       </div>
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${color.replace('text-', 'bg-')}`}
+          className={`h-full rounded-full transition-all duration-700 ${barColor}`}
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -199,17 +199,17 @@ const DashboardPage = ({ asignaciones = [] }) => {
           ) : (
             <div className="space-y-4">
               <NivelBar
-                label="NEE" count={nivelesActivos.NEE ?? 0}
-                total={totalNiveles} color="text-red-600" bg="bg-red-100"
-              />
-              <NivelBar
-                label="LP" count={nivelesActivos.LP ?? 0}
-                total={totalNiveles} color="text-yellow-600" bg="bg-yellow-100"
-              />
-              <NivelBar
-                label="LE" count={nivelesActivos.LE ?? 0}
-                total={totalNiveles} color="text-green-600" bg="bg-green-100"
-              />
+              label="NEE" count={nivelesActivos.NEE ?? 0}
+              total={totalNiveles} color="text-red-600" bg="bg-red-100" barColor="bg-red-500"
+            />
+            <NivelBar
+              label="LP" count={nivelesActivos.LP ?? 0}
+              total={totalNiveles} color="text-yellow-600" bg="bg-yellow-100" barColor="bg-yellow-500"
+            />
+            <NivelBar
+              label="LE" count={nivelesActivos.LE ?? 0}
+              total={totalNiveles} color="text-green-600" bg="bg-green-100" barColor="bg-green-500"
+            />
             </div>
           )}
         </div>
