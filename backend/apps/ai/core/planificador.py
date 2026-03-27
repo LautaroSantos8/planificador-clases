@@ -222,60 +222,61 @@ class PlanificadorDocente:
         materia: str
     ) -> str:
         """
-        Obtiene el proyecto áulico del docente desde ChromaDB.
-        Filtra por materia para evitar que un proyecto de otra materia contamine.
+        Obtiene TODOS los proyectos del docente para el grado,
+        sin filtrar por materia. El LLM integra el contexto.
         """
         try:
+            # Buscar por relevancia semántica + grado, sin filtrar por materia
             resultados = self.chroma.search_proyectos(
-                query=f"proyecto {materia} {grado}",
+                query=f"proyecto actividades {grado}",
                 docente_id=docente_id,
-                materia=materia,
                 grado=grado,
-                n_results=8  # Traer más para filtrar bien
+                n_results=10
             )
-            
+
+            if not resultados.get("documents") or not resultados["documents"][0]:
+                # Fallback: buscar sin filtro de grado
+                resultados = self.chroma.search_proyectos(
+                    query=f"proyecto actividades {materia}",
+                    docente_id=docente_id,
+                    n_results=10
+                )
+
             if not resultados.get("documents") or not resultados["documents"][0]:
                 return MSG_SIN_PROYECTO
-            
-            # Normalizar materia buscada para comparación
-            import unicodedata
-            def normalizar(t):
-                t = t.lower().strip()
-                t = unicodedata.normalize('NFD', t)
-                return ''.join(c for c in t if unicodedata.category(c) != 'Mn')
-            
-            materia_norm = normalizar(materia)
-            
-            # Mapeo de variantes para comparar
-            mapeo_materias = {
-                "matematica": ["matematica", "matematicas", "mat"],
-                "matematicas": ["matematica", "matematicas", "mat"],
-                "lengua": ["lengua", "practicas del lenguaje", "lengua y literatura"],
-                "ciencias naturales": ["ciencias naturales", "ciencias_naturales", "naturales"],
-                "ciencias sociales": ["ciencias sociales", "ciencias_sociales", "sociales"],
-            }
-            variantes_buscadas = mapeo_materias.get(materia_norm, [materia_norm])
-            
-            # Filtrar chunks cuya metadata de materias incluye la materia buscada
-            proyecto_partes = []
+
+            # Agrupar chunks por proyecto para mostrar contexto organizado
+            proyectos = {}
             metadatas = resultados.get("metadatas", [[]])[0]
             documentos = resultados["documents"][0]
-            
+
             for doc, meta in zip(documentos, metadatas):
                 if not doc:
                     continue
-                materias_chunk = normalizar(meta.get("materias", ""))
-                # Verificar si alguna variante de la materia está en el chunk
-                if any(v in materias_chunk for v in variantes_buscadas):
-                    proyecto_partes.append(doc)
-                    
-            # Si no encontró nada con filtro estricto, usar todos (fallback)
-            if not proyecto_partes:
-                logger.warning(f"No se encontró proyecto para materia '{materia}', usando todos los chunks")
-                proyecto_partes = [doc for doc in documentos if doc]
-            
-            return "\n\n".join(proyecto_partes) if proyecto_partes else MSG_SIN_PROYECTO
-            
+                pid = meta.get("proyecto_id", "unknown")
+                titulo = meta.get("titulo", "Proyecto")
+                tipo = meta.get("tipo", "proyecto_aulico")
+                materias = meta.get("materias", "")
+
+                if pid not in proyectos:
+                    proyectos[pid] = {
+                        "titulo": titulo,
+                        "tipo": tipo,
+                        "materias": materias,
+                        "chunks": []
+                    }
+                proyectos[pid]["chunks"].append(doc)
+
+            # Formatear contexto agrupado por proyecto
+            partes = []
+            for pid, datos in proyectos.items():
+                tipo_label = "Proyecto áulico" if datos["tipo"] == "proyecto_aulico" else "Planificación anual"
+                materias_label = f" ({datos['materias']})" if datos["materias"] else ""
+                partes.append(f"=== {tipo_label}: {datos['titulo']}{materias_label} ===")
+                partes.extend(datos["chunks"][:3])  # Máximo 3 chunks por proyecto
+
+            return "\n\n".join(partes) if partes else MSG_SIN_PROYECTO
+
         except Exception as e:
             logger.error(f"Error obteniendo proyecto docente: {str(e)}")
             return MSG_SIN_PROYECTO

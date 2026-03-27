@@ -152,14 +152,17 @@ export const documentosAPI = {
     return response.data;
   },
 
-  upload: async (titulo, tipo, descripcion, asignacionId, archivo) => {
+  upload: async (titulo, tipo, descripcion, asignacionId, archivo, grado, gradosList, materiasConfirmadas) => {
     const formData = new FormData();
     formData.append('titulo', titulo);
     formData.append('tipo', tipo);
     formData.append('descripcion', descripcion);
-    formData.append('asignacion_id', asignacionId);
+    if (asignacionId) formData.append('asignacion_id', asignacionId);
     formData.append('archivo', archivo);
-
+    if (grado) formData.append('grado', grado);
+    if (gradosList) formData.append('grados_lista', gradosList);
+    if (materiasConfirmadas) formData.append('materias_confirmadas', materiasConfirmadas);
+  
     const response = await api.post('/planificacion/documentos/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -168,6 +171,14 @@ export const documentosAPI = {
 
   delete: async (id) => {
     const response = await api.delete(`/planificacion/documentos/${id}/`);
+    return response.data;
+  },
+  analizar: async (archivo) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    const response = await api.post('/planificacion/documentos/analizar/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 };

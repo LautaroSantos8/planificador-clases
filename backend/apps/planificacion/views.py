@@ -97,41 +97,41 @@ def subir_documento(request):
         
         # Obtener datos del formulario
         titulo = request.POST.get("titulo")
-        tipo = request.POST.get("tipo")
+        tipo = request.POST.get("tipo", "proyecto")
         descripcion = request.POST.get("descripcion", "")
         asignacion_id = request.POST.get("asignacion_id")
         archivo = request.FILES.get("archivo")
-        
-        # Validaciones
-        if not titulo or not tipo or not asignacion_id or not archivo:
+        grado = request.POST.get("grado", "")
+        materias_confirmadas = request.POST.get("materias_confirmadas", "")
+        grados_lista = request.POST.get("grados_lista", "")
+
+        if not titulo or not archivo:
             return JsonResponse({
-                "success": False, 
-                "error": "Faltan campos requeridos: titulo, tipo, asignacion_id, archivo"
+                "success": False,
+                "error": "Faltan campos requeridos: titulo, archivo"
             }, status=400)
-        
+
         if tipo not in ['proyecto', 'planificacion_anual']:
             return JsonResponse({
                 "success": False,
                 "error": "Tipo debe ser 'proyecto' o 'planificacion_anual'"
             }, status=400)
-        
-        # Verificar extensión
+
         extension = os.path.splitext(archivo.name)[1].lower()
         if extension not in ['.docx', '.pdf', '.xlsx']:
             return JsonResponse({
                 "success": False,
                 "error": "Formato no soportado. Use .docx, .pdf o .xlsx"
             }, status=400)
-        
-        # Verificar que la asignación pertenece al docente
-        try:
-            asignacion = AsignacionDocente.objects.get(id=asignacion_id, docente=docente)
-        except AsignacionDocente.DoesNotExist:
-            return JsonResponse({
-                "success": False,
-                "error": "Asignación no encontrada"
-            }, status=404)
-        
+
+        # Asignación es opcional ahora
+        asignacion = None
+        if asignacion_id:
+            try:
+                asignacion = AsignacionDocente.objects.get(id=asignacion_id, docente=docente)
+            except AsignacionDocente.DoesNotExist:
+                pass
+
         # Crear documento
         documento = DocumentoDocente.objects.create(
             titulo=titulo,
@@ -139,16 +139,18 @@ def subir_documento(request):
             descripcion=descripcion,
             asignacion=asignacion,
             archivo=archivo,
+            grado=grado,
+            grados_lista=grados_lista,
+            materias_confirmadas=materias_confirmadas,
         )
-        
-        # Procesar documento para RAG (en background sería ideal, pero lo hacemos sync por ahora)
+
         try:
             procesar_documento_para_rag(documento)
         except Exception as e:
             logger.error(f"Error procesando documento {documento.id}: {str(e)}")
             documento.error_procesamiento = str(e)
             documento.save()
-        
+
         return JsonResponse({
             "success": True,
             "documento": {
@@ -157,13 +159,125 @@ def subir_documento(request):
                 "tipo": documento.tipo,
                 "procesado": documento.procesado,
                 "chunks_generados": documento.chunks_generados,
+                "materias_detectadas": documento.materias_detectadas,
+                "grado": documento.grado,
             }
         })
-        
+
     except Exception as e:
         logger.error(f"Error en subir_documento: {str(e)}")
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def analizar_documento(request):
+    """
+    Analiza un documento y detecta grado y materias sin guardarlo.
+    Se usa para mostrar la previsualización antes de confirmar la carga.
+    """
+    try:
+        docente = get_docente_from_request(request)
+        if not docente:
+            return JsonResponse({"success": False, "error": "No autenticado"}, status=401)
+
+        archivo = request.FILES.get("archivo")
+        if not archivo:
+            return JsonResponse({"success": False, "error": "Falta el archivo"}, status=400)
+
+        extension = os.path.splitext(archivo.name)[1].lower()
+        if extension not in ['.docx', '.pdf', '.xlsx']:
+            return JsonResponse({
+                "success": False,
+                "error": "Formato no soportado. Use .docx, .pdf o .xlsx"
+            }, status=400)
+
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as tmp:
+            for chunk in archivo.chunks():
+                tmp.write(chunk)
+            tmp_path = tmp.name
+
+        try:
+            from utils.proyecto_processor import ProyectoProcessor
+            processor = ProyectoProcessor()
+
+            if extension == '.docx':
+                texto = processor._extract_from_docx(tmp_path)
+            elif extension == '.pdf':
+                texto = processor._extract_from_pdf(tmp_path)
+            else:
+                texto = processor._extract_from_xlsx(tmp_path)
+
+            texto = processor._limpiar_texto(texto)
+            titulo = processor._extraer_titulo(texto)
+            materias = processor._detectar_materias(texto)
+
+            # Detectar grados con umbral mínimo de menciones
+            import re
+            grados_detectados = []
+            texto_lower = texto.lower()
+
+            patrones_todos = [
+                r'\b1[°º]\s*a\s*6[°º]\b',
+                r'\btodos\s*los\s*grados\b',
+                r'\bsala.{0,10}(?:a\s*)?6[°º]\b',
+            ]
+
+            for patron in patrones_todos:
+                if re.search(patron, texto_lower):
+                    grados_detectados = ['1','2','3','4','5','6']
+                    break
+
+            if not grados_detectados:
+                patrones_grado = [
+                    (r'\b1[°º]\s*(?:grado|año)\b', '1'),
+                    (r'\b2[°º]\s*(?:grado|año)\b', '2'),
+                    (r'\b3[°º]\s*(?:grado|año)\b', '3'),
+                    (r'\b4[°º]\s*(?:grado|año)\b', '4'),
+                    (r'\b5[°º]\s*(?:grado|año)\b', '5'),
+                    (r'\b6[°º]\s*(?:grado|año)\b', '6'),
+                    (r'\bprimer\s*grado\b', '1'),
+                    (r'\bsegundo\s*grado\b', '2'),
+                    (r'\btercer\s*grado\b', '3'),
+                    (r'\bcuarto\s*grado\b', '4'),
+                    (r'\bquinto\s*grado\b', '5'),
+                    (r'\bsexto\s*grado\b', '6'),
+                ]
+
+                conteo_grados = {}
+                for patron, grado_val in patrones_grado:
+                    count = len(re.findall(patron, texto_lower))
+                    if count > 0:
+                        conteo_grados[grado_val] = conteo_grados.get(grado_val, 0) + count
+
+                # Solo incluir grados con 2+ menciones
+                grados_detectados = sorted([g for g, c in conteo_grados.items() if c >= 2])
+
+                # Si no detectó nada, usar el grado de la asignación actual
+                if not grados_detectados:
+                    from apps.docentes.models import AsignacionDocente
+                    asignacion_id = request.POST.get("asignacion_id")
+                    if asignacion_id:
+                        try:
+                            asignacion = AsignacionDocente.objects.get(id=asignacion_id, docente=docente)
+                            grados_detectados = [str(asignacion.grado)]
+                        except AsignacionDocente.DoesNotExist:
+                            pass
+
+        finally:
+            import os as os_module
+            os_module.unlink(tmp_path)
+            
+        return JsonResponse({
+            "success": True,
+            "titulo_detectado": titulo,
+            "materias_detectadas": materias,
+            "grados_detectados": grados_detectados,
+        })
+
+    except Exception as e:
+        logger.error(f"Error analizando documento: {str(e)}")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 @csrf_exempt
 @require_http_methods(["DELETE"])
@@ -207,33 +321,46 @@ def eliminar_documento(request, documento_id):
 # =============================================================================
 # PROCESAMIENTO RAG
 # =============================================================================
-
 def procesar_documento_para_rag(documento: DocumentoDocente):
     """Procesa un documento y lo guarda en ChromaDB."""
     from utils.proyecto_processor import ProyectoProcessor, preparar_para_chroma
     from apps.ai.core.chroma import ChromaManager
-    
+
     # Obtener ruta del archivo
     file_path = documento.archivo.path
-    
+
     # Procesar documento
+
     processor = ProyectoProcessor(chunk_size=1500, chunk_overlap=200)
+    
+    # Determinar grado — usar el del documento si existe, sino el de la asignación
+    grado = documento.grado or (str(documento.asignacion.grado) if documento.asignacion else "todos")
+    
+    # Determinar materias confirmadas por el docente (si las hay)
+    materias_param = None
+    if documento.materias_confirmadas:
+        materias_param = [m.strip() for m in documento.materias_confirmadas.split(',') if m.strip()]
     
     chunks = processor.process_proyecto(
         file_path=file_path,
-        docente_id=documento.asignacion.docente.id,
-        institucion_id=documento.asignacion.docente.institucion.id if documento.asignacion.docente.institucion else 0,
-        grado=str(documento.asignacion.grado),
+        docente_id=documento.asignacion.docente.id if documento.asignacion else documento.docente.id,
+        institucion_id=documento.asignacion.docente.institucion.id if documento.asignacion and documento.asignacion.docente.institucion else 0,
+        grado=grado,
+        materias=materias_param,
         tipo="proyecto_aulico" if documento.tipo == "proyecto" else "planificacion_anual",
     )
     
+    # Guardar materias detectadas si no había confirmadas
+    if not documento.materias_confirmadas and chunks:
+        materias_detectadas = chunks[0].metadata.materias
+        documento.materias_detectadas = ','.join(materias_detectadas)
+        documento.grado = grado
+
     # Guardar contenido extraído
     documento.contenido = "\n\n".join([chunk.texto for chunk in chunks])
     
     # Preparar para ChromaDB
     documents, metadatas, ids = preparar_para_chroma(chunks)
-    
-    # Agregar documento_id a metadata para poder eliminar después
     for meta in metadatas:
         meta['documento_db_id'] = documento.id
     
@@ -248,7 +375,6 @@ def procesar_documento_para_rag(documento: DocumentoDocente):
     documento.save()
     
     return len(chunks)
-
 
 def eliminar_chunks_de_chroma(documento: DocumentoDocente):
     """Elimina los chunks de un documento de ChromaDB."""

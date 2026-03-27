@@ -56,16 +56,16 @@ class ProyectoChunk:
     metadata: ProyectoMetadata
 
 
-# Patrones para detectar materias en el texto
+# Patrones para detectar materias — requieren menciones múltiples o en contexto clave
 PATRONES_MATERIA = {
-    'matematicas': [r'matem[aá]tica', r'c[aá]lculo', r'geometr[ií]a', r'n[uú]meros?'],
-    'lengua': [r'lengua', r'literatura', r'lectura', r'escritura', r'oralidad'],
-    'ciencias_naturales': [r'ciencias?\s*naturales?', r'biolog[ií]a', r'medio\s*ambiente', r'biodiversidad'],
-    'ciencias_sociales': [r'ciencias?\s*sociales?', r'historia', r'geograf[ií]a', r'sociedad'],
-    'educacion_fisica': [r'educaci[oó]n\s*f[ií]sica', r'deporte', r'corporal'],
-    'educacion_artistica': [r'educaci[oó]n\s*art[ií]stica', r'arte', r'm[uú]sica', r'pl[aá]stica'],
-    'tecnologia': [r'tecnolog[ií]a', r'inform[aá]tica', r'computaci[oó]n', r'tics?'],
-    'ciudadania': [r'ciudadan[ií]a', r'[eé]tica', r'convivencia', r'formaci[oó]n\s*[eé]tica', r'esi'],
+    'matematicas': [r'matem[aá]tica', r'c[aá]lculo', r'geometr[ií]a'],
+    'lengua': [r'lengua', r'literatura', r'lectura y escritura', r'pr[aá]cticas del lenguaje'],
+    'ciencias_naturales': [r'ciencias?\s*naturales?', r'biolog[ií]a', r'medio\s*ambiente'],
+    'ciencias_sociales': [r'ciencias?\s*sociales?', r'historia', r'geograf[ií]a'],
+    'educacion_fisica': [r'educaci[oó]n\s*f[ií]sica'],
+    'educacion_artistica': [r'educaci[oó]n\s*art[ií]stica', r'expresi[oó]n\s*art[ií]stica', r'artes?\s*visuales?', r'm[uú]sica'],
+    'tecnologia': [r'\btecnolog[ií]a\s+(?!productos)', r'inform[aá]tica', r'\btics\b'],
+    'ciudadania': [r'ciudadan[ií]a', r'formaci[oó]n\s*[eé]tica', r'educaci[oó]n\s*sexual\s*integral', r'\besi\b'],
 }
 
 # Patrones de limpieza
@@ -177,16 +177,42 @@ class ProyectoProcessor:
         return texto.strip()
     
     def _detectar_materias(self, texto: str) -> List[str]:
-        """Detecta materias mencionadas en el texto."""
+        """
+        Detecta materias con umbral mínimo de menciones para evitar falsos positivos.
+        Una materia se detecta solo si aparece 2+ veces o en frases clave.
+        """
         materias = set()
         texto_lower = texto.lower()
-        
+
+        # Frases que indican que el documento ES de esa materia (1 mención alcanza)
+        FRASES_CLAVE = {
+            'matematicas': [r'proyecto.{0,30}matem[aá]tica', r'matem[aá]tica.{0,30}grado', r'[aá]rea.{0,20}matem[aá]tica'],
+            'lengua': [r'proyecto.{0,30}lengua', r'lengua.{0,30}grado', r'[aá]rea.{0,20}lengua', r'lectura y escritura'],
+            'ciencias_naturales': [r'proyecto.{0,30}ciencias?\s*naturales?', r'ciencias?\s*naturales?.{0,30}grado'],
+            'ciencias_sociales': [r'proyecto.{0,30}ciencias?\s*sociales?', r'ciencias?\s*sociales?.{0,30}grado'],
+            'educacion_fisica': [r'proyecto.{0,30}educaci[oó]n\s*f[ií]sica'],
+            'educacion_artistica': [r'proyecto.{0,30}educaci[oó]n\s*art[ií]stica', r'proyecto.{0,30}artes?\s*visuales?', r'proyecto.{0,30}m[uú]sica'],
+            'tecnologia': [r'proyecto.{0,30}tecnolog[ií]a', r'[aá]rea.{0,20}tecnolog[ií]a'],
+            'ciudadania': [r'proyecto.{0,30}esi', r'proyecto.{0,30}ciudadan[ií]a', r'educaci[oó]n\s*sexual\s*integral'],
+        }
+
         for materia, patrones in PATRONES_MATERIA.items():
-            for patron in patrones:
-                if re.search(patron, texto_lower):
+            # Verificar frases clave primero (1 mención alcanza)
+            for frase in FRASES_CLAVE.get(materia, []):
+                if re.search(frase, texto_lower):
                     materias.add(materia)
                     break
-        
+
+            if materia in materias:
+                continue
+
+            # Si no hay frase clave, requerir 2+ menciones
+            menciones = 0
+            for patron in patrones:
+                menciones += len(re.findall(patron, texto_lower))
+            if menciones >= 2:
+                materias.add(materia)
+
         return sorted(list(materias))
     
     def _extraer_titulo(self, texto: str) -> str:

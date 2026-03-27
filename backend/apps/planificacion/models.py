@@ -71,8 +71,14 @@ class DocumentoDocente(models.Model):
     titulo = models.CharField(max_length=200)
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES)
     descripcion = models.TextField(blank=True)
-    asignacion = models.ForeignKey(AsignacionDocente, on_delete=models.CASCADE, related_name='documentos')
     
+    # Nuevo flujo: grado + materias detectadas (sin depender de asignación específica)
+    grado = models.CharField(max_length=10, blank=True, help_text="Grado al que aplica (ej: '2', '5-6', 'todos')")
+    grados_lista = models.CharField(max_length=50, blank=True, help_text="Grados separados por coma (ej: '1,2,3,4,5,6')")
+    materias_detectadas = models.CharField(max_length=200, blank=True, help_text="Materias detectadas automáticamente")
+    materias_confirmadas = models.CharField(max_length=200, blank=True, help_text="Materias confirmadas por el docente")
+    asignacion = models.ForeignKey(AsignacionDocente, on_delete=models.CASCADE, related_name='documentos', null=True, blank=True)
+
     # Archivo subido
     archivo = models.FileField(upload_to='documentos_docentes/')
     

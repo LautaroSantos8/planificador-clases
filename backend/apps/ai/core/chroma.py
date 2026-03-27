@@ -238,16 +238,15 @@ class ChromaManager:
         grado: Union[str, int] = None, 
         n_results: int = 3,
     ) -> dict:
-        """Busca en proyectos docentes con filtros."""
+        """Busca en proyectos docentes con filtros. Materia es opcional."""
         where = self._build_where_filter(
             docente_id=docente_id,
             institucion_id=institucion_id,
             grado=self._normalize_grado(grado),
         )
-        
-        # Nota: materia se guarda como string "mat1,mat2", no podemos filtrar parcialmente
-        # Se filtra después si es necesario
-        
+        # Nota: materia se ignora intencionalmente para traer todos los proyectos del grado
+        # El LLM integra el contexto de todos los proyectos
+
         return self.proyectos_docentes.query(
             query_texts=[query],
             n_results=n_results,
