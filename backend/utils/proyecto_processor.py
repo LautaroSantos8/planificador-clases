@@ -448,7 +448,7 @@ class ProyectoProcessor:
 # FUNCIÓN DE CONVENIENCIA PARA CARGAR A CHROMADB
 # =============================================================================
 
-ddef preparar_para_chroma(chunks: List[ProyectoChunk]) -> tuple:
+def preparar_para_chroma(chunks: List[ProyectoChunk]) -> tuple:
     documents = []
     metadatas = []
     ids = []
