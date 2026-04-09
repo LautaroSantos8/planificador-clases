@@ -601,6 +601,13 @@ PALABRAS_GENERACION = [
     "dame", "creá", "crea", "quiero", "preparar"
 ]
 
+from difflib import SequenceMatcher
+
+def _contiene_palabra_similar(texto: str, objetivo: str, umbral: float = 0.85) -> bool:
+    for palabra in texto.split():
+        if SequenceMatcher(None, palabra, objetivo).ratio() >= umbral:
+            return True
+    return False
 
 def detectar_tipo_consulta(texto: str) -> str:
     """
@@ -662,8 +669,32 @@ def detectar_tipo_consulta(texto: str) -> str:
 
     # Verificar si quiere GENERAR planificación (aunque mencione "alineada")
     quiere_generar = any(palabra in texto_lower for palabra in PALABRAS_GENERACION)
-    menciona_planificacion = any(palabra in texto_lower for palabra in TIPOS_CONSULTA["planificacion"])
-    
+    menciona_planificacion = (
+        any(palabra in texto_lower for palabra in TIPOS_CONSULTA["planificacion"]) or
+        _contiene_palabra_similar(texto_lower, "planificacion") or
+        _contiene_palabra_similar(texto_lower, "planificacion")
+    )
+
+    # Caso especial: "de esta planificacion dame actividades" → actividades
+    menciona_actividades_explicito = any(p in texto_lower for p in [
+        "actividades", "ejercicios", "ejercicio", "problemas", "ejercitacion"
+    ])
+    contextos_planificacion = [
+        "de esta planificacion", "de esta planificación",
+        "de esa planificacion", "de esa planificación",
+        "de la planificacion", "de la planificación",
+        "estaplanificacion", "estaplanificación",
+        "esaplanificacion", "esaplanificación",
+        "esta planificacion", "esta planificación",
+        "esa planificacion", "esa planificación",
+        "que me diste",
+        "que me acabas de dar",
+        "esa clase",
+    ]
+    if menciona_planificacion and menciona_actividades_explicito:
+        if any(ctx in texto_lower for ctx in contextos_planificacion):
+            return "actividades"
+
     # Si quiere generar Y menciona planificación → es planificacion
     if quiere_generar and menciona_planificacion:
         return "planificacion"
