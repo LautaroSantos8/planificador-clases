@@ -1,47 +1,33 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-.prose table {
-    display: block;
-    overflow-x: auto;
-    width: 100%;
-    table-layout: fixed;
-  }
-  
-  .prose table th:nth-child(1),
-  .prose table td:nth-child(1) {
-    width: 80px;
-    min-width: 80px;
-  }
-  
-  .prose table th:nth-child(2),
-  .prose table td:nth-child(2) {
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .prose table th:nth-child(3),
-  .prose table td:nth-child(3) {
-    width: 300px;
-    min-width: 300px;
-  }
-  
-  .prose table th:nth-child(4),
-  .prose table td:nth-child(4) {
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .prose table th:nth-child(5),
-  .prose table td:nth-child(5) {
-    width: 120px;
-    min-width: 120px;
-  }
-  
-  .prose table td,
-  .prose table th {
-    white-space: normal;
-    word-break: break-word;
-    padding: 8px;
-    vertical-align: top;
-  }
+
+.prose table th:nth-child(1),
+.prose table td:nth-child(1) {
+  width: 100px;
+  min-width: 100px;
+}
+
+.prose table th:nth-child(2),
+.prose table td:nth-child(2) {
+  width: 160px;
+  min-width: 160px;
+}
+
+.prose table th:nth-child(3),
+.prose table td:nth-child(3) {
+  width: 380px;
+  min-width: 380px;
+}
+
+.prose table th:nth-child(4),
+.prose table td:nth-child(4) {
+  width: 150px;
+  min-width: 150px;
+}
+
+.prose table th:nth-child(5),
+.prose table td:nth-child(5) {
+  width: 150px;
+  min-width: 150px;
+}
