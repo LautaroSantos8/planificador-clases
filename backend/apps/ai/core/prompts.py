@@ -304,29 +304,32 @@ TEMPLATE_CONSULTA_CURRICULA = """## CONSULTA DEL DOCENTE
 - Grado: {grado}°
 - Materia: {materia}
 
-## CONTENIDO CURRICULAR ENCONTRADO (RAG)
+## PLANIFICACIÓN ANUAL Y PROYECTOS DEL DOCENTE
+{proyecto_aulico}
+
+## CONTENIDO CURRICULAR OFICIAL (RAG)
 {contexto_rag}
 
 ## INSTRUCCIONES
-El docente quiere información sobre los contenidos curriculares. Responde de forma clara y organizada.
+El docente quiere información sobre los contenidos curriculares. Respondé de forma clara y organizada.
 
-Tu respuesta debe incluir (cada sección en su propio párrafo):
+**IMPORTANTE:** Si el docente pregunta por un mes o período específico (ej: "qué debo dar en abril"), priorizá la información de la PLANIFICACIÓN ANUAL del docente sobre el contenido curricular oficial. La planificación anual tiene el detalle exacto de qué dar en cada período.
+
+Tu respuesta debe incluir:
 
 ### 1. Resumen de contenidos
-Lista los aprendizajes y contenidos relevantes para el grado y materia consultados.
+Lista los aprendizajes y contenidos para el período y materia consultados, basándote principalmente en la planificación anual del docente.
 
 ### 2. Indicadores de logro
 Menciona los indicadores asociados a esos contenidos.
 
 ### 3. Secuencia sugerida
-Si aplica, sugiere un orden lógico para abordar los contenidos.
+Sugiere un orden lógico para abordar los contenidos en el período.
 
 ### 4. Conexiones intercurriculares
-Menciona posibles conexiones con otras áreas curriculares.
+Menciona conexiones con otras áreas, especialmente con los proyectos del docente.
 
-Basa tu respuesta ÚNICAMENTE en el contexto curricular proporcionado. Si no hay información suficiente, indícalo claramente.
-
-Responde ahora de forma clara y práctica."""
+Respondé ahora de forma clara y práctica."""
 
 # =============================================================================
 # TEMPLATE: DIFERENCIAR ACTIVIDADES (Caso 4)
