@@ -516,7 +516,7 @@ ${alumnos.length > 0
                   </button>
 
                   {/* Contenido Markdown */}
-                  <div className="prose prose-sm max-w-none pr-8">
+                  <div className="prose prose-sm max-w-none pr-8 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
