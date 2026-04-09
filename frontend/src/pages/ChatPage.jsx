@@ -554,7 +554,7 @@ ${alumnos.length > 0
                             : <code className="block bg-gray-100 p-3 rounded-lg text-sm font-mono overflow-x-auto" {...props} />,
                       }}
                     >
-                      {message.content}
+                      {message.content.replace(/<br\s*\/?>/gi, '\n')}
                     </ReactMarkdown>
                   </div>
 
