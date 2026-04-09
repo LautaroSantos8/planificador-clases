@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { iaAPI, alumnosAPI } from '../services/api';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ExportOption — fila del menú dropdown
@@ -519,6 +520,7 @@ ${alumnos.length > 0
                   <div className="prose prose-sm max-w-none pr-8 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeRaw]}
                       components={{
                         table: ({ node, ...props }) => (
                           <div className="overflow-x-auto my-4 rounded-lg border border-gray-200">
@@ -554,7 +556,7 @@ ${alumnos.length > 0
                             : <code className="block bg-gray-100 p-3 rounded-lg text-sm font-mono overflow-x-auto" {...props} />,
                       }}
                     >
-                      {message.content.replace(/<br\s*\/?>/gi, '\n')}
+                      {message.content}
                     </ReactMarkdown>
                   </div>
 
