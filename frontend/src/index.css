@@ -4,30 +4,30 @@
 
 .prose table th:nth-child(1),
 .prose table td:nth-child(1) {
-  width: 100px;
-  min-width: 100px;
+  width: 90px;
+  min-width: 90px;
 }
 
 .prose table th:nth-child(2),
 .prose table td:nth-child(2) {
-  width: 160px;
-  min-width: 160px;
+  width: 140px;
+  min-width: 140px;
 }
 
 .prose table th:nth-child(3),
 .prose table td:nth-child(3) {
-  width: 380px;
-  min-width: 380px;
+  width: 320px;
+  min-width: 320px;
 }
 
 .prose table th:nth-child(4),
 .prose table td:nth-child(4) {
-  width: 150px;
-  min-width: 150px;
+  width: 130px;
+  min-width: 130px;
 }
 
 .prose table th:nth-child(5),
 .prose table td:nth-child(5) {
-  width: 150px;
-  min-width: 150px;
+  width: 130px;
+  min-width: 130px;
 }
