@@ -165,6 +165,61 @@ class ProyectoProcessor:
         wb.close()
         return '\n'.join(textos)
     
+    def _extract_planificacion_anual(self, file_path) -> str:
+        """
+        Extractor especial para planificaciones anuales en formato tabla.
+        Genera chunks organizados por período+materia.
+        """
+        from docx import Document
+        doc = Document(str(file_path))
+        
+        if not doc.tables:
+            return self._extract_from_docx(file_path)
+        
+        table = doc.tables[0]
+        chunks_texto = []
+        
+        MESES_CONOCIDOS = [
+            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+        ]
+        
+        def es_periodo(texto):
+            t = texto.lower()
+            return any(mes in t for mes in MESES_CONOCIDOS)
+        
+        periodo_actual = "sin-periodo"
+        materia_actual = ""
+        
+        for row in table.rows[1:]:  # Saltar header
+            cells = [c.text.strip() for c in row.cells]
+            
+            col0 = cells[0] if len(cells) > 0 else ""
+            col1 = cells[1] if len(cells) > 1 else ""
+            col2 = cells[2] if len(cells) > 2 else ""
+            col3 = cells[3] if len(cells) > 3 else ""
+            
+            # Detectar si col0 es período o materia
+            if es_periodo(col0):
+                periodo_actual = col0.upper()
+                materia_actual = col1
+                eje = col2
+                contenidos = col3
+            elif col0 and not es_periodo(col0):
+                # col0 es materia (período vacío — usar el anterior)
+                materia_actual = col0
+                eje = col1
+                contenidos = col2
+            else:
+                eje = col2
+                contenidos = col3
+            
+            if contenidos.strip():
+                chunk = f"PERÍODO: {periodo_actual}\nMATERIA: {materia_actual}\nEJE: {eje}\nCONTENIDOS:\n{contenidos}"
+                chunks_texto.append(chunk)
+        
+        return "\n\n---\n\n".join(chunks_texto)
+
     def _limpiar_texto(self, texto: str) -> str:
         """Limpia el texto de ruido."""
         for patron in PATRONES_RUIDO:
@@ -330,7 +385,10 @@ class ProyectoProcessor:
         # Extraer texto según formato
         if extension == '.docx':
             self.stats['formato'] = 'docx'
-            texto = self._extract_from_docx(file_path)
+            if tipo == 'planificacion_anual':
+                texto = self._extract_planificacion_anual(file_path)
+            else:
+                texto = self._extract_from_docx(file_path)
         elif extension == '.pdf':
             self.stats['formato'] = 'pdf'
             texto = self._extract_from_pdf(file_path)
@@ -390,19 +448,22 @@ class ProyectoProcessor:
 # FUNCIÓN DE CONVENIENCIA PARA CARGAR A CHROMADB
 # =============================================================================
 
-def preparar_para_chroma(chunks: List[ProyectoChunk]) -> tuple:
-    """
-    Convierte chunks a formato para ChromaDB.
-    
-    Returns:
-        (documents, metadatas, ids) listos para chroma_manager.add_to_proyectos()
-    """
+ddef preparar_para_chroma(chunks: List[ProyectoChunk]) -> tuple:
     documents = []
     metadatas = []
     ids = []
     
     for chunk in chunks:
         documents.append(chunk.texto)
+        
+        # Detectar período del chunk si es planificación anual
+        periodo = "general"
+        if chunk.metadata.tipo == "planificacion_anual":
+            texto_lower = chunk.texto.lower()
+            if texto_lower.startswith("período:"):
+                primera_linea = chunk.texto.split('\n')[0]
+                periodo = primera_linea.replace("PERÍODO:", "").strip().lower()
+                periodo = periodo.replace(" – ", "-").replace(" - ", "-")
         
         metadatas.append({
             'proyecto_id': chunk.metadata.proyecto_id,
@@ -415,6 +476,7 @@ def preparar_para_chroma(chunks: List[ProyectoChunk]) -> tuple:
             'año_proyecto': chunk.metadata.año_proyecto,
             'chunk_index': chunk.metadata.chunk_index,
             'total_chunks': chunk.metadata.total_chunks,
+            'periodo': periodo,
         })
         
         ids.append(f"{chunk.metadata.proyecto_id}_chunk{chunk.metadata.chunk_index:03d}")

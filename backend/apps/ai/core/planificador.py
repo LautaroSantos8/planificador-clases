@@ -15,6 +15,7 @@ import google.generativeai as genai
 from django.conf import settings
 from typing import Optional
 import logging
+import re
 
 from .chroma import ChromaManager
 from .prompts import (
@@ -121,7 +122,7 @@ class PlanificadorDocente:
                     materia=materia
                 )
                 # 3. Buscar proyecto del docente
-                proyecto_aulico = self._obtener_proyecto_docente(docente_id, grado, materia)
+                proyecto_aulico = self._obtener_proyecto_docente(docente_id, grado, materia, consulta)
             
             # 4. Formatear lista de alumnos
             lista_alumnos = formatear_lista_alumnos(alumnos) if alumnos else MSG_SIN_ALUMNOS
@@ -219,7 +220,8 @@ class PlanificadorDocente:
         self,
         docente_id: int,
         grado: str,
-        materia: str
+        materia: str,
+        consulta: str = ""
     ) -> str:
         """
         Obtiene TODOS los proyectos del docente para el grado,
@@ -227,8 +229,14 @@ class PlanificadorDocente:
         """
         try:
             # Buscar por relevancia semántica + grado, sin filtrar por materia
+            MESES_MAP = ['enero','febrero','marzo','abril','mayo','junio',
+                        'julio','agosto','septiembre','octubre','noviembre','diciembre']
+            consulta_lower = consulta.lower()
+            mes_mencionado = next((m for m in MESES_MAP if m in consulta_lower), None)
+            query_busqueda = f"contenidos {mes_mencionado} {materia} {grado}" if mes_mencionado else f"proyecto actividades {grado}"
+
             resultados = self.chroma.search_proyectos(
-                query=f"proyecto actividades {grado}",
+                query=query_busqueda,
                 docente_id=docente_id,
                 grado=grado,
                 n_results=10
