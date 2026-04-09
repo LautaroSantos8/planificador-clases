@@ -91,6 +91,8 @@ TEMPLATE_PLANIFICACION = """## SOLICITUD DEL DOCENTE
 ## PROYECTO ÁULICO DEL DOCENTE
 {proyecto_aulico}
 
+**IMPORTANTE sobre la Planificación Anual:** Los chunks de la planificación anual pueden estar organizados por bimestres o períodos largos (ej: "ABRIL-MAYO-JUNIO"). Si el docente pregunta por un mes específico dentro de un período, analizá el contenido completo del chunk y extraé lo que corresponde a ese mes. Si no hay separación explícita por mes, distribuí los contenidos del período de forma lógica y equitativa entre los meses que lo componen.
+
 ## INSTRUCCIONES CRÍTICAS - LEER CON ATENCIÓN
 
 Debes generar **3 PLANIFICACIONES DIARIAS COMPLETAS Y SEPARADAS**, una para cada nivel de desempeño:
@@ -306,6 +308,8 @@ TEMPLATE_CONSULTA_CURRICULA = """## CONSULTA DEL DOCENTE
 
 ## PLANIFICACIÓN ANUAL Y PROYECTOS DEL DOCENTE
 {proyecto_aulico}
+
+**IMPORTANTE sobre la Planificación Anual:** Los chunks de la planificación anual pueden estar organizados por bimestres o períodos largos (ej: "ABRIL-MAYO-JUNIO"). Si el docente pregunta por un mes específico dentro de un período, analizá el contenido completo del chunk y extraé lo que corresponde a ese mes. Si no hay separación explícita por mes, distribuí los contenidos del período de forma lógica y equitativa entre los meses que lo componen.
 
 ## CONTENIDO CURRICULAR OFICIAL (RAG)
 {contexto_rag}
