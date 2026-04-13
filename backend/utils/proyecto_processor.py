@@ -32,7 +32,9 @@ try:
     XLSX_SUPPORT = True
 except ImportError:
     XLSX_SUPPORT = False
-
+    
+import logging
+logger = logging.getLogger(__name__)
 
 @dataclass
 class ProyectoMetadata:
@@ -167,58 +169,59 @@ class ProyectoProcessor:
     
     def _extract_planificacion_anual(self, file_path) -> str:
         """
-        Extractor especial para planificaciones anuales en formato tabla.
-        Genera chunks organizados por período+materia.
+        Extrae y estructura una planificación anual usando Gemini.
+        Funciona con cualquier formato de tabla que use el docente.
         """
-        from docx import Document
-        doc = Document(str(file_path))
-        
-        if not doc.tables:
-            return self._extract_from_docx(file_path)
-        
-        table = doc.tables[0]
-        chunks_texto = []
-        
-        MESES_CONOCIDOS = [
-            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-        ]
-        
-        def es_periodo(texto):
-            t = texto.lower()
-            return any(mes in t for mes in MESES_CONOCIDOS)
-        
-        periodo_actual = "sin-periodo"
-        materia_actual = ""
-        
-        for row in table.rows[1:]:  # Saltar header
-            cells = [c.text.strip() for c in row.cells]
-            
-            col0 = cells[0] if len(cells) > 0 else ""
-            col1 = cells[1] if len(cells) > 1 else ""
-            col2 = cells[2] if len(cells) > 2 else ""
-            col3 = cells[3] if len(cells) > 3 else ""
-            
-            # Detectar si col0 es período o materia
-            if es_periodo(col0):
-                periodo_actual = col0.upper()
-                materia_actual = col1
-                eje = col2
-                contenidos = col3
-            elif col0 and not es_periodo(col0):
-                # col0 es materia (período vacío — usar el anterior)
-                materia_actual = col0
-                eje = col1
-                contenidos = col2
-            else:
-                eje = col2
-                contenidos = col3
-            
-            if contenidos.strip():
-                chunk = f"PERÍODO: {periodo_actual}\nMATERIA: {materia_actual}\nEJE: {eje}\nCONTENIDOS:\n{contenidos}"
-                chunks_texto.append(chunk)
-        
-        return "\n\n---\n\n".join(chunks_texto)
+        import google.generativeai as genai
+        import os
+
+        # Extraer texto crudo primero
+        extension = Path(file_path).suffix.lower()
+        if extension == '.docx':
+            texto_crudo = self._extract_from_docx(file_path)
+        elif extension == '.pdf':
+            texto_crudo = self._extract_from_pdf(file_path)
+        else:
+            texto_crudo = self._extract_from_xlsx(file_path)
+
+        if not texto_crudo.strip():
+            return texto_crudo
+
+        # Usar Gemini para estructurar el contenido
+        try:
+            genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+            model = genai.GenerativeModel('gemini-2.0-flash')
+
+            prompt = f"""Este documento es una planificación anual docente argentina de nivel primario.
+    Extraé toda la información y devolvela ÚNICAMENTE en este formato, un bloque por cada combinación de período+materia+eje:
+
+    PERÍODO: [mes o rango de meses, ej: ABRIL, MAYO-JUNIO, JULIO-AGOSTO]
+    MATERIA: [nombre de la materia, ej: MATEMÁTICA, LENGUA, CIENCIAS NATURALES]
+    EJE: [nombre del eje o unidad temática]
+    CONTENIDOS:
+    [contenidos e indicadores de logro completos]
+
+    ---
+
+    Reglas importantes:
+    - Si hay varias tablas, cada una puede corresponder a una materia diferente — detectala del encabezado o título de la tabla
+    - Si la materia no está en una columna explícita, inferila del contenido o del encabezado de la tabla
+    - Si un período abarca varios meses (ej: MAYO-JUNIO), escribilo tal cual
+    - Mantené los contenidos COMPLETOS, no los resumás ni acortés
+    - Separá cada bloque con ---
+    - No agregues explicaciones, introducciones ni texto extra — solo los bloques en el formato indicado
+
+    DOCUMENTO A PROCESAR:
+    {texto_crudo[:10000]}
+    """
+
+            response = model.generate_content(prompt)
+            return response.text
+
+        except Exception as e:
+            # Fallback al texto crudo si Gemini falla
+            logger.warning(f"Gemini no pudo estructurar la planificación: {e}. Usando texto crudo.")
+            return texto_crudo
 
     def _limpiar_texto(self, texto: str) -> str:
         """Limpia el texto de ruido."""
