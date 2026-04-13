@@ -70,6 +70,10 @@ const DocumentosPage = ({ asignaciones }) => {
       setError('Formato no soportado. Use .docx, .pdf o .xlsx');
       return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('El archivo es muy grande (máximo 5MB). Si tiene imágenes, intentá guardar el documento sin imágenes o comprimirlas.');
+      return;
+    }
     setArchivo(file);
     setTitulo(file.name.replace(/\.[^/.]+$/, ''));
     setError('');
