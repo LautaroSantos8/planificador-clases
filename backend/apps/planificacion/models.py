@@ -9,6 +9,8 @@ class Alumno(models.Model):
         ('T', 'Tarde'),
     ]
     GRADO_CHOICES = [
+        (-2, 'Sala de 4 (Jardín)'),
+        (-1, 'Sala de 5 (Jardín)'),
         (1, '1° Grado'),
         (2, '2° Grado'),
         (3, '3° Grado'),
