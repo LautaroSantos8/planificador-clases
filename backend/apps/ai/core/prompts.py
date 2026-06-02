@@ -89,6 +89,7 @@ TEMPLATE_PLANIFICACION = """## SOLICITUD DEL DOCENTE
 
 ## ALUMNOS Y SUS NIVELES
 {lista_alumnos}
+**REGLA CRÍTICA SOBRE ALUMNOS:** Usá ÚNICAMENTE los nombres que aparecen en la lista de arriba. Si un nivel (NEE, LP o LE) no tiene alumnos listados, NO generes planificación para ese nivel. Solo generá planificaciones para los niveles que tengan alumnos registrados. NUNCA inventes nombres de alumnos.
 
 ## CONTEXTO CURRICULAR RELEVANTE (RAG)
 {contexto_rag}
