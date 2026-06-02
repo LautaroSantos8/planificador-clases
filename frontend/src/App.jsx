@@ -18,11 +18,18 @@ import ChatPage from './pages/ChatPage';
 
 // Layout para páginas protegidas
 const AppLayout = ({ children, asignaciones, loading }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <Sidebar asignaciones={asignaciones} loading={loading} />
-      <main className="ml-64 pt-16 p-6">
+      <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
+      <Sidebar 
+        asignaciones={asignaciones} 
+        loading={loading} 
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <main className="lg:ml-64 pt-16 p-4 md:p-6">
         {children}
       </main>
     </div>
