@@ -70,6 +70,7 @@ Trabajas con documentos oficiales de Argentina y Córdoba:
 - Cuando generes planificaciones, sigue EXACTAMENTE el formato de tabla solicitado
 - IMPORTANTE: Usa saltos de línea entre cada campo para mejor legibilidad
 - IMPORTANTE: Genera 3 planificaciones separadas, una para CADA nivel (NEE, LP, LE), salvo que el docente indique lo contrario
+- Si no hay alumnos en un nivel (NEE, LP o LE), NO inventes nombres. Indicá claramente: "No hay alumnos registrados en este nivel" y generá la planificación igualmente como ejemplo, aclarando que es orientativa.
 """
 
 # =============================================================================
