@@ -77,7 +77,7 @@ TEMPLATE_PLANIFICACION = """## SOLICITUD DEL DOCENTE
 
 ## INFORMACIÓN DEL DOCENTE
 - Docente: {nombre_docente}
-- Grado: {grado}° - División: {division}
+- Grado: {grado} - División: {division}
 - Turno: {turno}
 - Materia: {materia}
 - Institución: {institucion}
@@ -112,7 +112,7 @@ Debes generar **3 PLANIFICACIONES DIARIAS COMPLETAS Y SEPARADAS**, una para cada
 
 **Fecha:** A definir por el docente
 
-**Curso:** {grado}° {division}
+**Curso:** {grado} {division}
 
 **Docente:** {nombre_docente}
 
@@ -144,7 +144,7 @@ Debes generar **3 PLANIFICACIONES DIARIAS COMPLETAS Y SEPARADAS**, una para cada
 
 **Fecha:** A definir por el docente
 
-**Curso:** {grado}° {division}
+**Curso:** {grado} {division}
 
 **Docente:** {nombre_docente}
 
@@ -176,7 +176,7 @@ Debes generar **3 PLANIFICACIONES DIARIAS COMPLETAS Y SEPARADAS**, una para cada
 
 **Fecha:** A definir por el docente
 
-**Curso:** {grado}° {division}
+**Curso:** {grado} {division}
 
 **Docente:** {nombre_docente}
 
@@ -223,7 +223,7 @@ TEMPLATE_ACTIVIDADES = """## SOLICITUD DEL DOCENTE
 
 ## INFORMACIÓN DEL DOCENTE
 - Docente: {nombre_docente}
-- Grado: {grado}° - División: {division}
+- Grado: {grado} - División: {division}
 - Materia: {materia}
 
 ## ALUMNOS Y SUS NIVELES
@@ -303,7 +303,7 @@ TEMPLATE_CONSULTA_CURRICULA = """## CONSULTA DEL DOCENTE
 {consulta_docente}
 
 ## INFORMACIÓN DEL DOCENTE
-- Grado: {grado}°
+- Grado: {grado}
 - Materia: {materia}
 
 ## PLANIFICACIÓN ANUAL Y PROYECTOS DEL DOCENTE
@@ -343,7 +343,7 @@ TEMPLATE_DIFERENCIAR = """## SOLICITUD DEL DOCENTE
 {consulta_docente}
 
 ## INFORMACIÓN DEL DOCENTE
-- Grado: {grado}° - División: {division}
+- Grado: {grado} - División: {division}
 - Materia: {materia}
 
 ## ALUMNOS Y SUS NIVELES
@@ -435,7 +435,7 @@ TEMPLATE_ALINEAR_PROYECTO = """## CONSULTA DEL DOCENTE
 {consulta_docente}
 
 ## INFORMACIÓN DEL DOCENTE
-- Grado: {grado}° - División: {division}
+- Grado: {grado} - División: {division}
 - Materia: {materia}
 
 ## ACTIVIDAD A EVALUAR
@@ -501,7 +501,7 @@ TEMPLATE_CONVERSACIONAL = """## MENSAJE DEL DOCENTE
 
 ## CONTEXTO
 - Docente: {nombre_docente}
-- Materia: {materia} - {grado}°{division}
+- Materia: {materia} - {grado}{division}
 
 ## INSTRUCCIONES
 Respondé de forma breve y conversacional. Si es un saludo, saludá y preguntá en qué podés ayudar.
@@ -518,7 +518,7 @@ TEMPLATE_AMBIGUO = """## MENSAJE DEL DOCENTE
 
 ## CONTEXTO
 - Docente: {nombre_docente}
-- Materia: {materia} - {grado}°{division}
+- Materia: {materia} - {grado}{division}
 
 ## INSTRUCCIONES
 El docente tiene una necesidad pedagógica pero no especificó qué tipo de ayuda quiere.
@@ -540,7 +540,7 @@ TEMPLATE_GENERAL = """## CONSULTA DEL DOCENTE
 
 ## INFORMACIÓN DEL DOCENTE
 - Docente: {nombre_docente}
-- Grado: {grado}° - División: {division}
+- Grado: {grado} - División: {division}
 - Materia: {materia}
 - Institución: {institucion}
 

@@ -227,6 +227,10 @@ const ChatInput = React.memo(({ onSubmit, isLoading }) => {
 // ChatPage principal
 // ─────────────────────────────────────────────────────────────────────────────
 const ChatPage = ({ asignaciones }) => {
+  const gradoDisplay = (grado) => {
+    const map = { '-2': 'Sala de 4', '-1': 'Sala de 5', '1': '1°', '2': '2°', '3': '3°', '4': '4°', '5': '5°', '6': '6°' };
+    return map[String(grado)] || `${grado}°`;
+  };
   const { grado, division, materiaId } = useParams();
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -279,7 +283,7 @@ const ChatPage = ({ asignaciones }) => {
           const le  = alumnos.filter((a) => a.nivel === 'LE').length;
           setMessages([{
             role: 'assistant',
-            content: `¡Hola! Soy tu asistente de planificación para **${grado}° ${division} - ${asignacionActual.materia_nombre}**.
+            content: `¡Hola! Soy tu asistente de planificación para **${gradoDisplay(grado)} ${division} - ${asignacionActual.materia_nombre}**.
 
 ${alumnos.length > 0
   ? `Tenés ${alumnos.length} alumnos cargados: **${nee} NEE**, **${lp} LP** y **${le} LE**.`

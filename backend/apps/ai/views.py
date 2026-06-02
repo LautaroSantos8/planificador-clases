@@ -93,6 +93,10 @@ def consultar_asistente(request):
         
         # Obtener parámetros de la consulta
         grado = data.get("grado", "")
+        # Convertir número de grado a texto legible para el LLM
+        from apps.docentes.models import AsignacionDocente as AD
+        grado_display = AD.grado_to_str(int(grado)) if grado and grado.lstrip('-').isdigit() else grado
+        division = data.get("division", "A")
         division = data.get("division", "A")
         materia = data.get("materia", "")
         turno = data.get("turno", "Mañana")
@@ -114,7 +118,7 @@ def consultar_asistente(request):
         resultado = planificador.procesar_consulta(
             consulta=consulta,
             docente_id=docente_id,
-            grado=grado,
+            grado=grado_display,
             division=division,
             materia=materia,
             nombre_docente=nombre_docente,
@@ -462,7 +466,8 @@ def exportar_planificacion(request):
         asignacion   = planificacion.asignacion
         docente      = asignacion.docente
         nombre_doc   = docente.get_full_name() or docente.email
-        grado        = str(asignacion.grado)
+        from apps.docentes.models import AsignacionDocente as AD
+        grado = AD.grado_to_str(asignacion.grado)
         division     = asignacion.division
         materia      = asignacion.materia.nombre
         consulta     = planificacion.prompt_original

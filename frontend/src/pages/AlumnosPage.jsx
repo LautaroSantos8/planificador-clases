@@ -4,6 +4,10 @@ import NivelBadge from '../components/alumnos/NivelBadge';
 import { alumnosAPI, nivelesAPI } from '../services/api';
 
 const AlumnosPage = ({ asignaciones }) => {
+  const gradoDisplay = (grado) => {
+    const map = { '-2': 'Sala de 4', '-1': 'Sala de 5', '1': '1°', '2': '2°', '3': '3°', '4': '4°', '5': '5°', '6': '6°' };
+    return map[String(grado)] || `${grado}°`;
+  }
   const { grado, division, materiaId } = useParams();
   const [alumnos, setAlumnos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +157,7 @@ const AlumnosPage = ({ asignaciones }) => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Alumnos de {grado}° {division}
+            Alumnos de {gradoDisplay(grado)} {division}
           </h1>
           <p className="text-gray-600 mt-1">{asignacionActual.materia_nombre}</p>
         </div>
@@ -184,7 +188,7 @@ const AlumnosPage = ({ asignaciones }) => {
           <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Sin alumnos en {grado}° {division}</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Sin alumnos en {gradoDisplay(grado)} {division}</h3>
           <p className="text-gray-500 mb-4">
             Los alumnos se cargan desde el panel de administración de Django.
           </p>

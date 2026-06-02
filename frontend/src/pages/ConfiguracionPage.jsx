@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { materiasAPI } from '../services/api';
 
 const ConfiguracionPage = ({ asignaciones, onAddAsignacion, onDeleteAsignacion }) => {
+  // Helper para mostrar grado correctamente
+  const gradoDisplay = (grado) => {
+    const map = { '-2': 'Sala de 4', '-1': 'Sala de 5', '1': '1°', '2': '2°', '3': '3°', '4': '4°', '5': '5°', '6': '6°' };
+    return map[String(grado)] || `${grado}°`;
+  };
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -100,6 +105,8 @@ const ConfiguracionPage = ({ asignaciones, onAddAsignacion, onDeleteAsignacion }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="">Seleccionar</option>
+                <option value="-2">Sala de 4 (Jardín)</option>
+                <option value="-1">Sala de 5 (Jardín)</option>
                 <option value="1">1° Grado</option>
                 <option value="2">2° Grado</option>
                 <option value="3">3° Grado</option>
@@ -191,12 +198,12 @@ const ConfiguracionPage = ({ asignaciones, onAddAsignacion, onDeleteAsignacion }
             <div key={a.id} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-                  <span className="text-indigo-700 font-bold">{a.grado}°{a.division}</span>
+                <span className="text-indigo-700 font-bold">{gradoDisplay(a.grado)}{a.division}</span>
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">{a.materia_nombre}</h3>
                   <p className="text-sm text-gray-500">
-                    {a.grado}° Grado - División {a.division} - Turno {a.turno_display || (a.turno === 'M' ? 'Mañana' : 'Tarde')}
+                  {gradoDisplay(a.grado)} - División {a.division} - Turno {a.turno_display || (a.turno === 'M' ? 'Mañana' : 'Tarde')}
                   </p>
                 </div>
               </div>

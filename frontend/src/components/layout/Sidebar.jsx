@@ -1,11 +1,16 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
+const gradoDisplay = (grado) => {
+  const map = { '-2': 'Sala de 4', '-1': 'Sala de 5', '1': '1°', '2': '2°', '3': '3°', '4': '4°', '5': '5°', '6': '6°' };
+  return map[String(grado)] || `${grado}°`;
+};
+
 const Sidebar = ({ asignaciones, loading }) => {
   // Agrupar asignaciones por grado-división
   const grupos = {};
   asignaciones.forEach(a => {
-    const key = `${a.grado}° ${a.division}`;
+    const key = `${gradoDisplay(a.grado)} ${a.division}`;
     if (!grupos[key]) grupos[key] = [];
     grupos[key].push(a);
   });
@@ -63,13 +68,11 @@ const Sidebar = ({ asignaciones, loading }) => {
         ) : (
           Object.entries(grupos).map(([grupo, materias]) => (
             <div key={grupo} className="mb-5">
-              {/* Título del grado */}
               <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                 {grupo}
               </h3>
 
               <div className="space-y-0.5">
-                {/* Documentos — UNO por grado/división */}
                 <NavLink
                   to={`/documentos/${materias[0].grado}/${materias[0].division}/${materias[0].materia_id}`}
                   className={({ isActive }) =>
@@ -84,12 +87,10 @@ const Sidebar = ({ asignaciones, loading }) => {
                   Documentos
                 </NavLink>
 
-                {/* Separador */}
                 <div className="px-3 pt-1 pb-0.5">
                   <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Materias</p>
                 </div>
 
-                {/* Por materia: Alumnos + Asistente */}
                 {materias.map((materia) => (
                   <div key={materia.id} className="ml-2 space-y-0.5">
                     <p className="px-3 pt-1 text-xs font-semibold text-gray-600">

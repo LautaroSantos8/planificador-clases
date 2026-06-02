@@ -117,6 +117,18 @@ class AsignacionDocente(models.Model):
         (5, '5° Grado'),
         (6, '6° Grado'),
     ]
+
+    @staticmethod
+    def grado_to_str(grado_num) -> str:
+        """Convierte número de grado a texto legible para mostrar."""
+        mapping = {
+            -2: 'Sala de 4',
+            -1: 'Sala de 5',
+            1: '1°', 2: '2°', 3: '3°',
+            4: '4°', 5: '5°', 6: '6°',
+        }
+        return mapping.get(int(grado_num), f'{grado_num}°')
+        
     DIVISION_CHOICES = [
         ('A', 'División A'),
         ('B', 'División B'),

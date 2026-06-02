@@ -165,7 +165,7 @@ def generar_pdf(
         pagesize=A4,
         leftMargin=2*cm, rightMargin=2*cm,
         topMargin=2.5*cm, bottomMargin=2.5*cm,
-        title=f"Planificación {grado}° {division} - {materia}",
+        title=f"Planificación {grado} {division} - {materia}",
         author=nombre_docente,
     )
 
@@ -241,7 +241,7 @@ def generar_pdf(
     # Metadatos en tabla
     meta_data = [
         ["Docente:", nombre_docente, "Fecha:", fecha.strftime("%d/%m/%Y")],
-        ["Grado/Div:", f"{grado}° {division}", "Materia:", materia],
+        ["Grado/Div:", f"{grado} {division}", "Materia:", materia],
     ]
     meta_table = Table(meta_data, colWidths=[3*cm, 6.5*cm, 2.5*cm, 5.5*cm])
     meta_table.setStyle(TableStyle([
@@ -476,7 +476,7 @@ def generar_docx(
     meta_tbl.style = "Table Grid"
     meta_data = [
         ["Docente:", nombre_docente, "Fecha:", fecha.strftime("%d/%m/%Y")],
-        ["Grado/Div:", f"{grado}° {division}", "Materia:", materia],
+        ["Grado/Div:", f"{grado} {division}", "Materia:", materia],
     ]
     for r_idx, row_data in enumerate(meta_data):
         row = meta_tbl.rows[r_idx]

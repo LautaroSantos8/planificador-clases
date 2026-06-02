@@ -16,6 +16,10 @@ const MATERIAS_DISPONIBLES = [
 const GRADOS_DISPONIBLES = ['1', '2', '3', '4', '5', '6'];
 
 const DocumentosPage = ({ asignaciones }) => {
+  const gradoDisplay = (grado) => {
+    const map = { '-2': 'Sala de 4', '-1': 'Sala de 5', '1': '1°', '2': '2°', '3': '3°', '4': '4°', '5': '5°', '6': '6°' };
+    return map[String(grado)] || `${grado}°`;
+  }
   const { grado, division, materiaId } = useParams();
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +216,7 @@ const DocumentosPage = ({ asignaciones }) => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mis Documentos - {grado}° {division}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Mis Documentos - {gradoDisplay(grado)} {division}</h1>
           <p className="text-gray-600 mt-1">{asignacionActual.materia_nombre}</p>
         </div>
         {!showForm && (
