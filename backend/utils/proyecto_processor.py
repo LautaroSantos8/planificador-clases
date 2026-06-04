@@ -174,6 +174,7 @@ class ProyectoProcessor:
         """
         from google import genai
         import os
+        import time
 
         # Extraer texto crudo primero
         extension = Path(file_path).suffix.lower()
@@ -192,29 +193,28 @@ class ProyectoProcessor:
             client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
 
             prompt = f"""Este documento es una planificación anual docente argentina de nivel primario.
-    Extraé toda la información y devolvela ÚNICAMENTE en este formato, un bloque por cada combinación de período+materia+eje:
+Extraé toda la información y devolvela ÚNICAMENTE en este formato, un bloque por cada combinación de período+materia+eje:
 
-    PERÍODO: [mes o rango de meses, ej: ABRIL, MAYO-JUNIO, JULIO-AGOSTO]
-    MATERIA: [nombre de la materia, ej: MATEMÁTICA, LENGUA, CIENCIAS NATURALES]
-    EJE: [nombre del eje o unidad temática]
-    CONTENIDOS:
-    [contenidos e indicadores de logro completos]
+PERÍODO: [mes o rango de meses, ej: ABRIL, MAYO-JUNIO, JULIO-AGOSTO]
+MATERIA: [nombre de la materia, ej: MATEMÁTICA, LENGUA, CIENCIAS NATURALES]
+EJE: [nombre del eje o unidad temática]
+CONTENIDOS:
+[contenidos e indicadores de logro completos]
 
-    ---
+---
 
-    Reglas importantes:
-    - Si hay varias tablas, cada una puede corresponder a una materia diferente — detectala del encabezado o título de la tabla
-    - Si la materia no está en una columna explícita, inferila del contenido o del encabezado de la tabla
-    - Si un período abarca varios meses (ej: MAYO-JUNIO), escribilo tal cual
-    - Mantené los contenidos COMPLETOS, no los resumás ni acortés
-    - Separá cada bloque con ---
-    - No agregues explicaciones, introducciones ni texto extra — solo los bloques en el formato indicado
+Reglas importantes:
+- Si hay varias tablas, cada una puede corresponder a una materia diferente — detectala del encabezado o título de la tabla
+- Si la materia no está en una columna explícita, inferila del contenido o del encabezado de la tabla
+- Si un período abarca varios meses (ej: MAYO-JUNIO), escribilo tal cual
+- Mantené los contenidos COMPLETOS, no los resumás ni acortés
+- Separá cada bloque con ---
+- No agregues explicaciones, introducciones ni texto extra — solo los bloques en el formato indicado
 
-    DOCUMENTO A PROCESAR:
-    {texto_crudo[:10000]}
-    """
+DOCUMENTO A PROCESAR:
+{texto_crudo[:10000]}
+"""
 
-        import time
             for intento in range(3):
                 try:
                     response = client.models.generate_content(
