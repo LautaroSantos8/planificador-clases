@@ -84,7 +84,7 @@ const AlumnosPage = ({ asignaciones }) => {
       if (response.success) {
         setAlumnos(prev => prev.map(a => 
           a.id === alumnoId 
-            ? { ...a, niveles: { ...a.niveles, [materiaId]: { ...a.niveles?.[materiaId], nota_contextual: observacionTemp } } }
+            ? { ...a, niveles: { ...a.niveles, [materiaId]: { ...a.niveles?.[materiaId], observaciones: observacionTemp } } }
             : a
         ));
         setEditingObservacion(null);
