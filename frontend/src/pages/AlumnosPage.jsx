@@ -77,14 +77,14 @@ const AlumnosPage = ({ asignaciones }) => {
   // Guardar observación
   const handleSaveObservacion = async (alumnoId) => {
     setSavingObservacion(true);
+    const textoFinal = observacionTemp.trim();
     
     try {
-      const response = await alumnosAPI.updateObservaciones(alumnoId, asignacionActual.id, observacionTemp);
-      
+      const response = await alumnosAPI.updateObservaciones(alumnoId, asignacionActual.id, textoFinal);      
       if (response.success) {
         setAlumnos(prev => prev.map(a => 
           a.id === alumnoId 
-            ? { ...a, niveles: { ...a.niveles, [materiaId]: { ...a.niveles?.[materiaId], observaciones: observacionTemp } } }
+            ? { ...a, niveles: { ...a.niveles, [materiaId]: { ...a.niveles?.[materiaId], nota_contextual: textoFinal } } }
             : a
         ));
         setEditingObservacion(null);
@@ -256,8 +256,8 @@ const AlumnosPage = ({ asignaciones }) => {
                         </button>
                       </div>
                     ) : (
-                      <button onClick={() => { setEditingObservacion(alumno.id); setObservacionTemp(alumno.niveles?.[materiaId]?.observaciones || ''); }} className="text-sm text-gray-500 hover:text-indigo-600">
-                        {alumno.niveles?.[materiaId]?.observaciones || 'Sin observaciones — click para agregar'}
+                      <button onClick={() => { setEditingObservacion(alumno.id); setObservacionTemp(alumno.niveles?.[materiaId]?.nota_contextual || ''); }} className="text-sm text-gray-500 hover:text-indigo-600">
+                        {alumno.niveles?.[materiaId]?.nota_contextual || 'Sin observaciones — click para agregar'}
                       </button>
                     )}
                   </td>
@@ -292,8 +292,8 @@ const AlumnosPage = ({ asignaciones }) => {
                     </svg>
                   )}
                 </div>
-                <button onClick={() => { setEditingObservacion(alumno.id); setObservacionTemp(alumno.niveles?.[materiaId]?.observaciones || ''); }} className="text-sm text-gray-500 hover:text-indigo-600 w-full text-left">
-                  📝 {alumno.niveles?.[materiaId]?.observaciones || 'Sin observaciones — tocar para agregar'}
+                <button onClick={() => { setEditingObservacion(alumno.id); setObservacionTemp(alumno.niveles?.[materiaId]?.nota_contextual || ''); }} className="text-sm text-gray-500 hover:text-indigo-600 w-full text-left">
+                  📝 {alumno.niveles?.[materiaId]?.nota_contextual || 'Sin observaciones — tocar para agregar'}
                 </button>
                 {editingObservacion === alumno.id && (
                   <div className="flex gap-2">
