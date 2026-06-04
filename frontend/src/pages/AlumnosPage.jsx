@@ -74,13 +74,6 @@ const AlumnosPage = ({ asignaciones }) => {
     }
   };
 
-  // Abrir editor de observaciones
-  const handleEditObservacion = (alumno) => {
-    setEditingObservacion(alumno.id);
-    const notaActual = alumno.niveles?.[materiaId]?.nota_contextual || '';
-    setObservacionTemp(notaActual);
-  };
-
   // Guardar observación
   const handleSaveObservacion = async (alumnoId) => {
     setSavingObservacion(true);
@@ -105,12 +98,6 @@ const AlumnosPage = ({ asignaciones }) => {
     } finally {
       setSavingObservacion(false);
     }
-  };
-
-  // Cancelar edición
-  const handleCancelEdit = () => {
-    setEditingObservacion(null);
-    setObservacionTemp('');
   };
 
   // Contar alumnos por nivel
@@ -154,14 +141,14 @@ const AlumnosPage = ({ asignaciones }) => {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
             Alumnos de {gradoDisplay(grado)} {division}
           </h1>
           <p className="text-gray-600 mt-1">{asignacionActual.materia_nombre}</p>
         </div>
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500 hidden sm:block">
           Los alumnos se administran desde el panel de Django
         </div>
       </div>
@@ -206,7 +193,8 @@ const AlumnosPage = ({ asignaciones }) => {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full">
+          {/* Vista desktop: tabla */}
+          <table className="w-full hidden md:table">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -252,49 +240,73 @@ const AlumnosPage = ({ asignaciones }) => {
                   <td className="px-6 py-4">
                     {editingObservacion === alumno.id ? (
                       <div className="flex items-center gap-2">
-                        <textarea
+                        <input
+                          type="text"
                           value={observacionTemp}
                           onChange={(e) => setObservacionTemp(e.target.value)}
-                          rows={2}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
-                          placeholder="Ej: Dificultad con lectoescritura..."
+                          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-indigo-500"
+                          placeholder="Escribir observación..."
+                          autoFocus
                         />
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => handleSaveObservacion(alumno.id)}
-                            disabled={savingObservacion}
-                            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
-                          >
-                            {savingObservacion ? '...' : 'Guardar'}
-                          </button>
-                          <button
-                            onClick={handleCancelEdit}
-                            className="px-3 py-1 bg-gray-300 text-gray-700 text-sm rounded hover:bg-gray-400"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm text-gray-500 flex-1">
-                          {alumno.niveles?.[materiaId]?.nota_contextual || <span className="italic text-gray-400">Sin observaciones para esta materia</span>}
-                        </p>
-                        <button
-                          onClick={() => handleEditObservacion(alumno)}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
+                        <button onClick={() => handleSaveObservacion(alumno.id)} disabled={savingObservacion} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50">
+                          {savingObservacion ? '...' : 'Guardar'}
+                        </button>
+                        <button onClick={() => setEditingObservacion(null)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">
+                          Cancelar
                         </button>
                       </div>
+                    ) : (
+                      <button onClick={() => { setEditingObservacion(alumno.id); setObservacionTemp(alumno.niveles?.[materiaId]?.observaciones || ''); }} className="text-sm text-gray-500 hover:text-indigo-600">
+                        {alumno.niveles?.[materiaId]?.observaciones || 'Sin observaciones — click para agregar'}
+                      </button>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* Vista mobile: cards */}
+          <div className="md:hidden divide-y divide-gray-200">
+            {alumnos.map((alumno) => (
+              <div key={alumno.id} className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-gray-900">{alumno.apellido}, {alumno.nombre}</span>
+                  <NivelBadge nivel={alumno.niveles?.[materiaId]?.nivel || 'LE'} size="sm" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={alumno.niveles?.[materiaId]?.nivel || 'LE'}
+                    onChange={(e) => handleNivelChange(alumno.id, e.target.value)}
+                    disabled={updatingNivel === alumno.id}
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                  >
+                    <option value="NEE">NEE - Rezago Significativo</option>
+                    <option value="LP">LP - Logros en Proceso</option>
+                    <option value="LE">LE - Logros Esperados</option>
+                  </select>
+                  {updatingNivel === alumno.id && (
+                    <svg className="animate-spin h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                </div>
+                <button onClick={() => { setEditingObservacion(alumno.id); setObservacionTemp(alumno.niveles?.[materiaId]?.observaciones || ''); }} className="text-sm text-gray-500 hover:text-indigo-600 w-full text-left">
+                  📝 {alumno.niveles?.[materiaId]?.observaciones || 'Sin observaciones — tocar para agregar'}
+                </button>
+                {editingObservacion === alumno.id && (
+                  <div className="flex gap-2">
+                    <input type="text" value={observacionTemp} onChange={(e) => setObservacionTemp(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm flex-1 focus:ring-2 focus:ring-indigo-500" placeholder="Escribir observación..." autoFocus />
+                    <button onClick={() => handleSaveObservacion(alumno.id)} disabled={savingObservacion} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm">
+                      {savingObservacion ? '...' : '✓'}
+                    </button>
+                    <button onClick={() => setEditingObservacion(null)} className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">✕</button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

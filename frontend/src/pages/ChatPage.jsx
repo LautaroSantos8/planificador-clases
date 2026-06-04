@@ -473,8 +473,8 @@ ${alumnos.length > 0
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-gray-900">
-            Asistente IA — {grado}° {division}
+          <h1 className="text-lg font-semibold text-gray-900 truncate">
+            Asistente IA — {gradoDisplay(grado)} {division}
           </h1>
           <p className="text-sm text-gray-500">{asignacionActual.materia_nombre}</p>
         </div>

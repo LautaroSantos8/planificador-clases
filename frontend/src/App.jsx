@@ -29,7 +29,7 @@ const AppLayout = ({ children, asignaciones, loading }) => {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <main className="lg:ml-64 pt-16 p-4 md:p-6">
+      <main className="lg:ml-64 pt-20 px-4 pb-4 md:px-6 md:pb-6">
         {children}
       </main>
     </div>
