@@ -11,7 +11,8 @@ Este módulo orquesta:
 6. Devolución de la respuesta
 """
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from django.conf import settings
 from typing import Optional
 import logging
@@ -38,6 +39,23 @@ from .prompts import (
 
 logger = logging.getLogger(__name__)
 
+import time
+
+def _llamar_gemini_con_reintento(func, max_reintentos=3, espera_base=5):
+    """
+    Ejecuta una función de Gemini con reintentos automáticos ante error 429.
+    Espera exponencial: 5s, 10s, 20s.
+    """
+    for intento in range(max_reintentos):
+        try:
+            return func()
+        except Exception as e:
+            if '429' in str(e) and intento < max_reintentos - 1:
+                espera = espera_base * (2 ** intento)
+                logger.warning(f"Rate limit Gemini (intento {intento + 1}). Reintentando en {espera}s...")
+                time.sleep(espera)
+            else:
+                raise
 
 class PlanificadorDocente:
     """
@@ -47,17 +65,14 @@ class PlanificadorDocente:
     
     def __init__(self):
         """Inicializa el planificador con Gemini y ChromaDB."""
-        # Configurar Gemini
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            generation_config={
-                "temperature": 0.7,
-                "top_p": 0.95,
-                "top_k": 40,
-                "max_output_tokens": 7500,
-            },
-            system_instruction=SYSTEM_PROMPT
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        self.model_name = "gemini-2.5-flash"
+        self.generation_config = types.GenerateContentConfig(
+            temperature=0.7,
+            top_p=0.95,
+            top_k=40,
+            max_output_tokens=7500,
+            system_instruction=SYSTEM_PROMPT,
         )
         
         # Inicializar RAG (ChromaDB)
@@ -394,8 +409,14 @@ class PlanificadorDocente:
         )
 
         try:
-            chat_resumen = self.model.start_chat(history=[])
-            resp = chat_resumen.send_message(prompt_resumen)
+            def _enviar_resumen():
+                chat_resumen = self.client.chats.create(
+                    model=self.model_name,
+                    config=self.generation_config,
+                )
+                return chat_resumen.send_message(message=prompt_resumen)
+
+            resp = _llamar_gemini_con_reintento(_enviar_resumen)
             texto_resumen = resp.text if resp and resp.text else texto_a_resumir[:500]
         except Exception as e:
             logger.warning(f"No se pudo generar resumen, usando truncado: {e}")
@@ -430,12 +451,16 @@ class PlanificadorDocente:
                 role = "user" if msg.get("role") == "user" else "model"
                 content = msg.get("content", "")
                 if content:
-                    chat_history.append({"role": role, "parts": [content]})
-
+                    chat_history.append(types.Content(role=role, parts=[types.Part.from_text(content)]))
             # Iniciar chat con historial
-            chat = self.model.start_chat(history=chat_history)
-            response = chat.send_message(prompt)
-
+            chat = self.client.chats.create(
+                model=self.model_name,
+                config=self.generation_config,
+                history=chat_history,
+            )
+            def _enviar_mensaje():
+                return chat.send_message(message=prompt)
+            response = _llamar_gemini_con_reintento(_enviar_mensaje)
             if response and response.text:
                 return response.text
             else:

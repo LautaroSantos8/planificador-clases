@@ -172,7 +172,7 @@ class ProyectoProcessor:
         Extrae y estructura una planificación anual usando Gemini.
         Funciona con cualquier formato de tabla que use el docente.
         """
-        import google.generativeai as genai
+        from google import genai
         import os
 
         # Extraer texto crudo primero
@@ -189,8 +189,7 @@ class ProyectoProcessor:
 
         # Usar Gemini para estructurar el contenido
         try:
-            genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            client = genai.Client(api_key=os.environ.get('GEMINI_API_KEY'))
 
             prompt = f"""Este documento es una planificación anual docente argentina de nivel primario.
     Extraé toda la información y devolvela ÚNICAMENTE en este formato, un bloque por cada combinación de período+materia+eje:
@@ -215,12 +214,25 @@ class ProyectoProcessor:
     {texto_crudo[:10000]}
     """
 
-            response = model.generate_content(prompt)
-            return response.text
+        import time
+            for intento in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model='gemini-2.5-flash',
+                        contents=prompt,
+                    )
+                    return response.text
+                except Exception as e:
+                    if '429' in str(e) and intento < 2:
+                        espera = 5 * (2 ** intento)
+                        logger.warning(f"Rate limit Gemini (intento {intento + 1}). Reintentando en {espera}s...")
+                        time.sleep(espera)
+                    else:
+                        logger.warning(f"Gemini no pudo estructurar la planificación: {e}. Usando texto crudo.")
+                        return texto_crudo
 
         except Exception as e:
-            # Fallback al texto crudo si Gemini falla
-            logger.warning(f"Gemini no pudo estructurar la planificación: {e}. Usando texto crudo.")
+            logger.warning(f"Error general procesando planificación: {e}. Usando texto crudo.")
             return texto_crudo
 
     def _limpiar_texto(self, texto: str) -> str:
