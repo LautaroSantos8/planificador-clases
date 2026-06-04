@@ -410,6 +410,7 @@ class PlanificadorDocente:
 
         try:
             def _enviar_resumen():
+                # NUEVA SINTAXIS: Se crea una sesión de chat a través de client.chats
                 chat_resumen = self.client.chats.create(
                     model=self.model_name,
                     config=self.generation_config,
@@ -436,40 +437,54 @@ class PlanificadorDocente:
 
         Args:
             prompt: Prompt del mensaje actual
-            historial: Lista de {role, content} de mensajes anteriores
-
-        Returns:
-            str: Respuesta de Gemini
+            historial: Lista opcional de historial de mensajes
         """
         try:
-            # Comprimir historial si es necesario
-            historial_procesado = self._comprimir_historial(historial or [])
+            # 1. Procesar y comprimir el historial si supera los límites
+            historial_procesado = self._comprimir_historial(historial) if historial else []
 
-            # Construir historial en formato Gemini
-            chat_history = []
-            for msg in historial_procesado:
-                role = "user" if msg.get("role") == "user" else "model"
-                content = msg.get("content", "")
-                if content:
-                    chat_history.append(types.Content(role=role, parts=[types.Part.from_text(content)]))
-            # Iniciar chat con historial
-            chat = self.client.chats.create(
-                model=self.model_name,
-                config=self.generation_config,
-                history=chat_history,
-            )
-            def _enviar_mensaje():
-                return chat.send_message(message=prompt)
-            response = _llamar_gemini_con_reintento(_enviar_mensaje)
-            if response and response.text:
+            # 2. Si hay historial, usamos el modo Chat del nuevo SDK
+            if historial_procesado:
+                # El nuevo SDK mapea roles estrictos: 'user' o 'model'
+                history_api = []
+                for msg in historial_procesado:
+                    rol = "user" if msg.get("role") == "user" else "model"
+                    history_api.append(
+                        types.Content(
+                            role=rol,
+                            parts=[types.Part.from_text(text=msg.get("content", ""))] # Corrección: Parámetro nombrado estricto
+                        )
+                    )
+                
+                # Inicializar chat pasándole el historial previo formateado
+                chat = self.client.chats.create(
+                    model=self.model_name,
+                    history=history_api,
+                    config=self.generation_config
+                )
+                
+                def ejecutar_chat():
+                    return chat.send_message(message=prompt)
+                    
+                response = _llamar_gemini_con_reintento(ejecutar_chat)
                 return response.text
+
+            # 3. Si no hay historial, hacemos una llamada directa estándar muy simple
             else:
-                logger.warning("Gemini devolvió respuesta vacía")
-                return "No pude generar una respuesta. Por favor, intentá reformular tu consulta."
+                def ejecutar_directo():
+                    return self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=prompt, # El nuevo SDK infiere el Part automáticamente de un String puro
+                        config=self.generation_config
+                    )
+                    
+                response = _llamar_gemini_con_reintento(ejecutar_directo)
+                return response.text
 
         except Exception as e:
             logger.error(f"Error llamando a Gemini: {str(e)}")
-            raise
+            raise e
+
     
     def obtener_mensaje_bienvenida(self) -> str:
         """Devuelve el mensaje de bienvenida del asistente."""
