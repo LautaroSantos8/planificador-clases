@@ -811,6 +811,13 @@ def formatear_lista_alumnos(alumnos: list) -> str:
         else:
             lineas.append(f"- {nombre_nivel}: 0 alumnos — NO GENERAR PLANIFICACIÓN PARA ESTE NIVEL")
     
+    # Agregar directiva explícita de qué niveles generar
+    niveles_con_alumnos = [n for n in ["NEE", "LP", "LE"] if por_nivel[n]]
+    niveles_sin_alumnos = [n for n in ["NEE", "LP", "LE"] if not por_nivel[n]]
+    
+    if niveles_sin_alumnos:
+        lineas.append(f"\n⚠️ INSTRUCCIÓN OBLIGATORIA: Generá planificación SOLAMENTE para {', '.join(niveles_con_alumnos)}. NO generes NADA para {', '.join(niveles_sin_alumnos)} — ni tabla, ni actividades, ni encabezado. Omitir completamente.")
+    
     return "\n".join(lineas) if lineas else "No hay información de alumnos disponible."
 
 
