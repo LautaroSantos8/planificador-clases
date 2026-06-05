@@ -113,7 +113,7 @@ const DashboardPage = ({ asignaciones = [] }) => {
           {saludo}, {docente?.first_name || 'Docente'} 👋
         </h1>
         <p className="text-gray-500 mt-1">
-          Bienvenido/a al Planificador Docente · Escuela Dr. Jorge Orgaz
+          Bienvenido/a a ARIA · Escuela Dr. Jorge Orgaz
         </p>
       </div>
 
