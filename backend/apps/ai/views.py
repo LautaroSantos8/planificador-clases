@@ -335,7 +335,7 @@ def estadisticas_rag(request):
 
 
 @csrf_exempt
-@require_http_methods(["GET"])
+@require_http_methods(["GET", "HEAD"])
 def health_check(request):
     """
     Endpoint de health check para verificar que el servicio está activo.
