@@ -804,11 +804,12 @@ def formatear_lista_alumnos(alumnos: list) -> str:
         cantidad = len(por_nivel[nivel])
         if cantidad > 0:
             lineas.append(f"- {nombre_nivel}: {cantidad} alumnos")
-            # Listar nombres (máximo 10 para no saturar el prompt)
             for nombre in por_nivel[nivel][:10]:
                 lineas.append(f"  • {nombre}")
             if cantidad > 10:
                 lineas.append(f"  • ... y {cantidad - 10} más")
+        else:
+            lineas.append(f"- {nombre_nivel}: 0 alumnos — NO GENERAR PLANIFICACIÓN PARA ESTE NIVEL")
     
     return "\n".join(lineas) if lineas else "No hay información de alumnos disponible."
 
