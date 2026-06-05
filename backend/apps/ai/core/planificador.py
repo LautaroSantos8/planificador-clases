@@ -250,20 +250,43 @@ class PlanificadorDocente:
             mes_mencionado = next((m for m in MESES_MAP if m in consulta_lower), None)
             query_busqueda = f"contenidos {mes_mencionado} {materia} {grado}" if mes_mencionado else f"proyecto actividades {grado}"
 
-            resultados = self.chroma.search_proyectos(
-                query=query_busqueda,
-                docente_id=docente_id,
-                grado=grado,
-                n_results=10
-            )
+            resultados = None
+            for intento in range(3):
+                try:
+                    resultados = self.chroma.search_proyectos(
+                        query=query_busqueda,
+                        docente_id=docente_id,
+                        grado=grado,
+                        n_results=10
+                    )
+                    break
+                except Exception as search_err:
+                    if intento < 2:
+                        logger.warning(f"Error búsqueda ChromaDB (intento {intento + 1}): {search_err}. Reintentando...")
+                        time.sleep(3)
+                    else:
+                        logger.error(f"ChromaDB falló después de 3 intentos: {search_err}")
+                        return MSG_SIN_PROYECTO
 
-            if not resultados.get("documents") or not resultados["documents"][0]:
-                # Fallback: buscar sin filtro de grado
-                resultados = self.chroma.search_proyectos(
-                    query=f"proyecto actividades {materia}",
-                    docente_id=docente_id,
-                    n_results=10
-                )
+            if not resultados or not resultados.get("documents") or not resultados["documents"][0]:
+
+                resultados = None
+                for intento in range(3):
+                    try:
+                        resultados = self.chroma.search_proyectos(
+                            query=query_busqueda,
+                            docente_id=docente_id,
+                            grado=grado,
+                            n_results=10
+                        )
+                        break
+                    except Exception as search_err:
+                        if intento < 2:
+                            logger.warning(f"Error búsqueda ChromaDB (intento {intento + 1}): {search_err}. Reintentando...")
+                            time.sleep(3)
+                        else:
+                            logger.error(f"ChromaDB falló después de 3 intentos: {search_err}")
+                            return MSG_SIN_PROYECTO
 
             if not resultados.get("documents") or not resultados["documents"][0]:
                 return MSG_SIN_PROYECTO

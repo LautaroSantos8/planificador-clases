@@ -444,10 +444,15 @@ def alumnos_por_grado_division(request):
                         defaults={'nivel': 'LE'}
                     )
         
+        # IDs de asignaciones del docente actual para filtrar niveles
+        asignacion_ids = {a.id for a in asignaciones_docente}
+
         alumnos_data = []
         for alumno in alumnos:
             niveles = {}
             for nivel in alumno.niveles.select_related('asignacion', 'asignacion__materia'):
+                if nivel.asignacion_id not in asignacion_ids:
+                    continue  # Ignorar niveles de otros docentes
                 materia_id = str(nivel.asignacion.materia.id)
                 niveles[materia_id] = {
                     'nivel': nivel.nivel,
