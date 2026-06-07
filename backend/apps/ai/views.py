@@ -356,7 +356,7 @@ def health_check(request):
     # Verificar Gemini (solo que se puede inicializar)
     try:
         planificador = get_planificador()
-        if planificador.model:
+        if planificador.client:
             services["gemini"] = True
     except Exception as e:
         logger.error(f"Gemini health check failed: {str(e)}")
