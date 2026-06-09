@@ -696,17 +696,21 @@ def detectar_tipo_consulta(texto: str) -> str:
         "de esta planificacion", "de esta planificación",
         "de esa planificacion", "de esa planificación",
         "de la planificacion", "de la planificación",
+        "a la planificacion", "a la planificación",
+        "relacionada a la", "relacionado a la",
+        "basada en la", "basado en la",
         "estaplanificacion", "estaplanificación",
         "esaplanificacion", "esaplanificación",
         "esta planificacion", "esta planificación",
         "esa planificacion", "esa planificación",
-        "que me diste",
-        "que me acabas de dar",
-        "esa clase",
+        "que me diste", "que recien me diste", "que recién me diste",
+        "que me acabas de dar", "que acabas de darme",
+        "esa clase", "esta clase",
+        "la clase anterior", "la clase que",
     ]
+    # Si pide actividades/ejercicios Y menciona planificación como referencia → actividades
     if menciona_planificacion and menciona_actividades_explicito:
-        if any(ctx in texto_lower for ctx in contextos_planificacion):
-            return "actividades"
+        return "actividades"
 
     # Si quiere generar Y menciona planificación → es planificacion
     if quiere_generar and menciona_planificacion:
