@@ -456,6 +456,23 @@ DOCUMENTO A PROCESAR:
         proyecto_id = self._generar_proyecto_id(titulo, docente_id)
         
         # Dividir en chunks
+        if tipo == 'planificacion_anual' and '---' in texto:
+            # Para planificación anual, cada bloque separado por --- es un chunk
+            bloques = [b.strip() for b in texto.split('---') if b.strip()]
+            chunks_texto = []
+            for bloque in bloques:
+                if len(bloque) > self.chunk_size * 2:
+                    # Si un bloque es muy largo, subdividirlo manteniendo el header
+                    header = '\n'.join(bloque.split('\n')[:4])
+                    sub_chunks = self._dividir_en_chunks(bloque)
+                    for sc in sub_chunks:
+                        if not sc.startswith('PERÍODO:'):
+                            sc = header + '\n' + sc
+                        chunks_texto.append(sc)
+                else:
+                    chunks_texto.append(bloque)
+        else:
+            chunks_texto = self._dividir_en_chunks(texto)
         chunks_texto = self._dividir_en_chunks(texto)
         self.stats['chunks_generados'] = len(chunks_texto)
         
