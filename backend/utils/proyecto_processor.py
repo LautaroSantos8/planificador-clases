@@ -212,7 +212,7 @@ Reglas importantes:
 - No agregues explicaciones, introducciones ni texto extra — solo los bloques en el formato indicado
 
 DOCUMENTO A PROCESAR:
-{texto_crudo[:10000]}
+{texto_crudo[:30000]}
 """
 
             for intento in range(3):
