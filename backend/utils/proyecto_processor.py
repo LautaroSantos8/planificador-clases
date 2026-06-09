@@ -176,10 +176,37 @@ class ProyectoProcessor:
         import os
         import time
 
-        # Extraer texto crudo primero
         extension = Path(file_path).suffix.lower()
+        
+        # Para docx, extraer tablas de forma estructurada
         if extension == '.docx':
-            texto_crudo = self._extract_from_docx(file_path)
+            from docx import Document
+            doc = Document(str(file_path))
+            
+            partes = []
+            # Texto de párrafos
+            for p in doc.paragraphs:
+                if p.text.strip():
+                    partes.append(p.text.strip())
+            
+            # Tablas con formato estructurado
+            for table in doc.tables:
+                if len(table.rows) < 2:
+                    continue
+                # Obtener headers de la primera fila
+                headers = [c.text.strip().replace('\n', ' ') for c in table.rows[0].cells]
+                partes.append(f"\nTABLA CON COLUMNAS: {' | '.join(headers)}")
+                
+                for row in table.rows[1:]:
+                    cells = [c.text.strip().replace('\n', ' ')[:200] for c in row.cells]
+                    fila_formateada = []
+                    for h, c in zip(headers, cells):
+                        if c:
+                            fila_formateada.append(f"{h}={c}")
+                    if fila_formateada:
+                        partes.append("FILA: " + " | ".join(fila_formateada))
+            
+            texto_crudo = '\n'.join(partes)
         elif extension == '.pdf':
             texto_crudo = self._extract_from_pdf(file_path)
         else:
@@ -204,9 +231,10 @@ CONTENIDOS:
 ---
 
 Reglas importantes:
-- Si hay varias tablas, cada una puede corresponder a una materia diferente — detectala del encabezado o título de la tabla
-- Si la materia no está en una columna explícita, inferila del contenido o del encabezado de la tabla
-- Si un período abarca varios meses (ej: MAYO-JUNIO), escribilo tal cual
+- Cada FILA de la tabla es un bloque separado con su propio período, materia y eje
+- El campo TIEMPO de cada fila indica el PERÍODO
+- El campo ESPACIO CURRICULAR indica la MATERIA
+- Si un período abarca varios meses (ej: ABRIL – MAYO - JUNIO), escribilo tal cual
 - Mantené los contenidos COMPLETOS, no los resumás ni acortés
 - Separá cada bloque con ---
 - No agregues explicaciones, introducciones ni texto extra — solo los bloques en el formato indicado
