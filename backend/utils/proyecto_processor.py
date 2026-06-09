@@ -519,11 +519,20 @@ def preparar_para_chroma(chunks: List[ProyectoChunk]) -> tuple:
         # Detectar período del chunk si es planificación anual
         periodo = "general"
         if chunk.metadata.tipo == "planificacion_anual":
-            texto_lower = chunk.texto.lower()
-            if texto_lower.startswith("período:"):
-                primera_linea = chunk.texto.split('\n')[0]
-                periodo = primera_linea.replace("PERÍODO:", "").strip().lower()
-                periodo = periodo.replace(" – ", "-").replace(" - ", "-")
+            import re
+            # Buscar PERÍODO: en cualquier parte del chunk, no solo al inicio
+            match = re.search(r'PERÍODO:\s*(.+)', chunk.texto)
+            if match:
+                periodo_raw = match.group(1).strip().lower()
+                # Limpiar: quitar todo después de un salto de línea
+                periodo_raw = periodo_raw.split('\n')[0].strip()
+                # Normalizar separadores
+                periodo_raw = periodo_raw.replace(' – ', '-').replace(' - ', '-')
+                # Extraer solo los meses (quitar "MATERIA:" y lo que sigue)
+                if 'materia' in periodo_raw:
+                    periodo_raw = periodo_raw.split('materia')[0].strip().rstrip('-').strip()
+                if periodo_raw:
+                    periodo = periodo_raw
         
         metadatas.append({
             'proyecto_id': chunk.metadata.proyecto_id,
