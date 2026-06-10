@@ -655,6 +655,19 @@ def detectar_tipo_consulta(texto: str) -> str:
     )
     if es_conversacional:
         return "conversacional"
+
+    # Detectar preguntas sobre las capacidades del asistente
+    PREGUNTAS_AYUDA = [
+        "en qué me podes ayudar", "en que me podes ayudar",
+        "qué podes hacer", "que podes hacer",
+        "qué sabes hacer", "que sabes hacer",
+        "cómo me podes ayudar", "como me podes ayudar",
+        "para qué servís", "para que servis",
+        "qué funciones tenés", "que funciones tenes",
+        "en qué me podés ayudar", "en que me podés ayudar",
+    ]
+    if any(frase in texto_lower for frase in PREGUNTAS_AYUDA):
+        return "general"
     
     # Detectar mensajes ambiguos: tienen intención pedagógica pero no especifican qué tipo
     # Ejemplos: "necesito algo para fracciones", "tengo alumnos con dificultades"
