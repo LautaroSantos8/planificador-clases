@@ -721,9 +721,31 @@ def detectar_tipo_consulta(texto: str) -> str:
         "esa clase", "esta clase",
         "la clase anterior", "la clase que",
     ]
-    # Si pide actividades/ejercicios Y menciona planificación como referencia → actividades
+    # Detectar qué pide EXPLÍCITAMENTE el docente
+    pide_planificacion = any(f in texto_lower for f in [
+        "dame una planificacion", "dame una planificación",
+        "haceme una planificacion", "haceme una planificación",
+        "necesito una planificacion", "necesito una planificación",
+        "generame una planificacion", "generame una planificación",
+        "dame planificacion", "dame planificación",
+        "una planificacion para", "una planificación para",
+        "planificacion para trabajar", "planificación para trabajar",
+    ])
+    pide_actividades = any(f in texto_lower for f in [
+        "dame actividades", "dame ejercicios",
+        "necesito actividades", "necesito ejercicios",
+        "generame actividades", "generame ejercicios",
+        "haceme actividades", "haceme ejercicios",
+        "actividades para trabajar", "actividades relacionada",
+        "actividades basadas", "actividades de",
+    ])
+    
     if menciona_planificacion and menciona_actividades_explicito:
-        return "actividades"
+        if pide_planificacion and not pide_actividades:
+            return "planificacion"
+        if pide_actividades:
+            return "actividades"
+        return "planificacion"
 
     # Si quiere generar Y menciona planificación → es planificacion
     if quiere_generar and menciona_planificacion:
