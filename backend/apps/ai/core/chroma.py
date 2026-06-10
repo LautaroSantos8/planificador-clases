@@ -101,12 +101,20 @@ class ChromaManager:
         
         Acepta:
             - int: 4 → "4"
-            - str: "4", "sala_5", "1-2" → sin cambios
+            - str: "4", "4°", "Sala de 4", "sala_5", "1-2" → normalizado
             - None → None
         """
         if grado is None:
             return None
-        return str(grado)
+        grado_str = str(grado).strip()
+        # Quitar símbolo de grado
+        grado_str = grado_str.replace('°', '').strip()
+        # Convertir display names a valores numéricos
+        if 'Sala de 4' in grado_str:
+            return '-2'
+        if 'Sala de 5' in grado_str:
+            return '-1'
+        return grado_str
 
     # === CURRÍCULA NACIONAL ===
     def add_to_nacional(self, documents: List[str], metadatas: List[dict], ids: List[str]):
