@@ -740,6 +740,23 @@ def detectar_tipo_consulta(texto: str) -> str:
         "actividades basadas", "actividades de",
     ])
     
+    # Si referencia "planificación anual" como documento y pregunta sobre contenidos → curricula
+    es_referencia_documento = any(f in texto_lower for f in [
+        "planificación anual", "planificacion anual",
+        "mi planificación", "mi planificacion",
+        "según mi", "segun mi",
+    ])
+    menciona_contenidos = any(f in texto_lower for f in [
+        "qué debo dar", "que debo dar",
+        "qué debería dar", "que deberia dar", "qué debería de dar", "que deberia de dar",
+        "qué contenido", "que contenido",
+        "qué tengo que dar", "que tengo que dar",
+        "qué temas", "que temas",
+        "qué debo enseñar", "que debo enseñar",
+    ])
+    if es_referencia_documento and menciona_contenidos:
+        return "curricula"
+        
     if menciona_planificacion and menciona_actividades_explicito:
         if pide_planificacion and not pide_actividades:
             return "planificacion"
