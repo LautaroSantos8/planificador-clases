@@ -190,10 +190,13 @@ def obtener_historial(request):
                 "error": "Se requiere asignacion_id"
             }, status=400)
         
-        # Obtener las últimas 50 conversaciones de esta asignación
-        planificaciones = PlanificacionGenerada.objects.filter(
-            asignacion_id=asignacion_id
-        ).order_by('created_at')[:50]
+        # Obtener las últimas 50 conversaciones (más recientes primero, luego invertir para orden cronológico)
+        planificaciones = list(
+            PlanificacionGenerada.objects.filter(
+                asignacion_id=asignacion_id
+            ).order_by('-created_at')[:50]
+        )
+        planificaciones.reverse()
         
         historial = []
         for p in planificaciones:
