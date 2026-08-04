@@ -5,6 +5,8 @@ import { asignacionesAPI } from './services/api';
 
 // Components
 import Login from './components/auth/Login';
+import OlvideContrasena from './components/auth/OlvideContrasena';
+import RestablecerContrasena from './components/auth/RestablecerContrasena';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import Sidebar from './components/layout/Sidebar';
@@ -101,11 +103,13 @@ const AppContent = () => {
 
   return (
     <Routes>
-      {/* Ruta pública */}
+      {/* Rutas públicas */}
       <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />}
       />
+      <Route path="/olvide-contrasena" element={<OlvideContrasena />} />
+      <Route path="/restablecer/:uid/:token" element={<RestablecerContrasena />} />
 
       {/* Rutas protegidas */}
       <Route

@@ -1,20 +1,28 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+import sys
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key-change-in-production')
-
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
+
+# En producción la SECRET_KEY es obligatoria: si falta, el proceso no arranca.
+# Arrancar con la clave de desarrollo sin que nadie se entere es peor que fallar.
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-key-solo-para-desarrollo'
+    else:
+        raise RuntimeError('Falta la variable de entorno SECRET_KEY en producción.')
 
 # ALLOWED_HOSTS: en producción se lee de la variable de entorno
 _allowed = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
 
-# Railway agrega automáticamente la URL del servicio — permitir cualquier subdominio de railway.app
+# Railway agrega automáticamente la URL del servicio
 ALLOWED_HOSTS += ['.railway.app', '.up.railway.app']
 
 INSTALLED_APPS = [
@@ -38,7 +46,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Para servir archivos estáticos en producción
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -93,29 +101,145 @@ CORS_ALLOW_CREDENTIALS = True
 
 AUTH_USER_MODEL = 'docentes.Docente'
 
+# ============================================================
+# RUTAS DE DATOS
+# ============================================================
 DATA_DIR = BASE_DIR / 'data'
 CURRICULA_DIR = BASE_DIR / 'curricula'
 CHROMA_DIR = DATA_DIR / 'chroma'
 
+# El volumen de Railway puede montarse vacío: crear los directorios al arrancar
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+
+# ============================================================
+# BASE DE DATOS
+# ============================================================
+# WAL permite lecturas concurrentes mientras hay una escritura en curso.
+# Con 4 workers gthread (16 hilos) es la diferencia entre funcionar y
+# devolver "database is locked" al docente.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DATA_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,
+            'init_command': (
+                'PRAGMA journal_mode=WAL;'
+                'PRAGMA synchronous=NORMAL;'
+                'PRAGMA busy_timeout=20000;'
+            ),
+            'transaction_mode': 'IMMEDIATE',
+        },
+    }
+}
+
+# ============================================================
+# CACHÉ
+# ============================================================
+# DRF guarda los contadores de throttling acá. LocMemCache no sirve:
+# es por proceso, así que con 4 workers el límite se multiplica por 4.
+# DatabaseCache lo comparte entre workers y sobrevive los reinicios.
+# Requiere: python manage.py createcachetable
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache',
     }
 }
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
+# ============================================================
+# DJANGO REST FRAMEWORK
+# ============================================================
+# El throttling se aplica por vista con @throttle_classes.
+# Acá solo se declaran las tasas de cada scope.
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'reset_password': '5/hour',
+    },
 }
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()
+]
+
+# ============================================================
+# CORREO Y RECUPERACIÓN DE CONTRASEÑA
+# ============================================================
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+PASSWORD_RESET_TIMEOUT = 3600  # el enlace vive 1 hora
+
+if DEBUG:
+    # En desarrollo el mail se imprime en la consola, no hace falta SMTP
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = True
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'ARIA <noreply@aria.edu.ar>')
+
+# ============================================================
+# LOGGING
+# ============================================================
+# Sin esto, los logger.info/error de las apps no llegan a ningún lado:
+# los loggers propagan a root, y root sin handlers descarta todo.
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO' if not DEBUG else 'DEBUG')
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'detallado': {
+            'format': '{asctime} [{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'consola': {
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,   # Railway captura stdout
+            'formatter': 'detallado',
+        },
+    },
+    'root': {
+        'handlers': ['consola'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'apps': {
+            'handlers': ['consola'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'utils': {
+            'handlers': ['consola'],
+            'level': LOG_LEVEL,
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['consola'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['consola'],
+            'level': 'WARNING',  # en DEBUG loguea cada query: demasiado ruido
+            'propagate': False,
+        },
+    },
+}
 
 # ============================================================
 # SEGURIDAD EN PRODUCCIÓN
