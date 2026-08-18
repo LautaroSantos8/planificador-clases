@@ -86,45 +86,6 @@ Se migró de SentenceTransformer (local) a Gemini Embedding API para eliminar ~3
 
 ---
 
-## 🚀 Instalación local
-
-### Requisitos
-- Python 3.10+
-- Node.js 18+
-- Gemini API Key
-
-### Backend
-
-```bash
-git clone https://github.com/LautaroSantos8/planificador-clases
-cd planificador-clases/backend
-
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-pip install -r requirements.txt
-
-cp .env.example .env
-# Completar GEMINI_API_KEY en .env
-
-python manage.py migrate
-python manage.py cargar_curricula   # Carga los 12 docs curriculares a ChromaDB
-python manage.py createsuperuser
-python manage.py runserver
-```
-
-### Frontend
-
-```bash
-cd ../frontend
-npm install
-npm start
-```
-
-El frontend estará en `http://localhost:3000` y el backend en `http://localhost:8000`.
-
----
-
 ## 📁 Estructura del proyecto
 
 ```
@@ -151,23 +112,6 @@ planificador-clases/
 │       └── context/AuthContext.jsx
 └── railway.toml
 ```
-
----
-
-## 📊 Estado del proyecto
-
-| Componente | Estado |
-|------------|--------|
-| Modelos Django (NEE/LP/LE) | ✅ Completo |
-| ChromaDB + Gemini Embeddings | ✅ 2,787 chunks |
-| Pipeline RAG + Gemini 2.5 Flash | ✅ Completo |
-| 8 prompt templates + detección automática | ✅ Completo |
-| Compresión de historial | ✅ Completo |
-| API REST (18 endpoints) | ✅ Completo |
-| Frontend React (5 páginas) | ✅ Completo |
-| Exportación PDF / DOCX | ✅ Completo |
-| Deploy en Railway | ✅ Activo |
-| Proyectos institucionales cruzados | ⏳ Pendiente |
 
 ---
 
